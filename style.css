@@ -1,0 +1,30 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body .links {
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 20px;
+}
+
+body .links:hover {
+    color: #000000;
+}
+
+.grupo {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.grupo h3 {
+    margin: 20x;
+}
+
+.bottons {
+    width: 35%;
+
+}
