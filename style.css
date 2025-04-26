@@ -26,11 +26,37 @@ body .links:hover {
 
 .bottons {
     width: 35%;
-
 }
 
 .box-search {
     display: flex;
     justify-content: center;
     gap: 0.1%;
+}
+
+main {
+    background-image: url("fundo.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+#paginainicial {
+    display: grid;
+    justify-content: center;
+    height: 100vh;
+    gap: 20px;
+    padding: 30px;
+}
+
+#paginainicial h1 {
+    color: #ffffff;
+    font-size: 50px;
+    text-align: center;
+}
+
+#paginainicial p {
+    color: #ffffff;
+    font-size: 20px;
+    text-align: center;
 }
