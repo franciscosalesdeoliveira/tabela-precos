@@ -28,3 +28,9 @@ body .links:hover {
     width: 35%;
 
 }
+
+.box-search {
+    display: flex;
+    justify-content: center;
+    gap: 0.1%;
+}

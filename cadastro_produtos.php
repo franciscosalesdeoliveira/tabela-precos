@@ -19,67 +19,110 @@ VALUES  (:nome, :descricao, :grupo_id, :preco)";
     exit;
 }
 
-?>
-<!-- Formulário para cadastrar produtos -->
-<div class="container mt-3" id="cadastro_produtos"></div>
-<form method="POST">
-    <label for="nome">Nome:</label>
-    <input type="text" name="nome" id="nome" required>
-    <label for="descricao">Descrição:</label>
-    <input type="text" name="descricao" id="descricao">
-    <label for="grupo_id">Grupo:</label>
-    <select name="grupo_id" id="grupo_id" required>
-        <?php
-        $sql = "SELECT id, nome FROM grupos ORDER BY id";
-        $stmt = $pdo->query($sql);
-        $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($grupos as $grupo) {
-            echo "<option value='{$grupo['id']}'>{$grupo['nome']}</option>";
-        }
-        ?>
-    </select>
-    <label for="preco">Preço:</label>
-    <input type="number" name="preco" id="preco" step="0.01" required>
-    <button type="submit">Cadastrar</button>
-    <button type="reset">Limpar</button>
-    <!-- <button><a href="listar_grupos.php" target="_blank">Listar Grupos</a></button> -->
-    <a href="index.php" style="display: inline-block; padding: 8px 12px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">Página Inicial</a>
-</form>
-</div>
+if (!empty($_GET['search'])) {
+    $data = "%" . $_GET['search'] . "%"; // adiciona os % para o LIKE
+    $sql = "SELECT * FROM produtos 
+    WHERE unaccent(nome) ILIKE unaccent(:data)
+       OR unaccent(descricao) ILIKE unaccent(:data)
+       OR CAST(id AS TEXT) ILIKE :data
+    ORDER BY id ASC";
+    // unaccent é usado para remover acentos e permitir comparação sem acentuação
+    // ILIKE é usado para comparação sem diferenciar maiúsculas de minúsculas
+    // CAST(id AS TEXT) é usado para permitir a pesquisa pelo ID como texto
 
-<!-- Listagem de Produtos -->
-<?php
-$sql = "SELECT id, nome, descricao, grupo_id, preco FROM produtos ORDER BY id";
-$stmt = $pdo->query($sql);
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':data', $data, PDO::PARAM_STR);
+    $stmt->execute();
+} else {
+    $sql = "SELECT * FROM produtos ORDER BY id ASC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+}
 $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
-<h2 class="text-center m-2">Produtos</h2>
-<div class="overflow-y-auto" style="max-height: 450px; max-width: 90%; margin: 0 auto;">
-    <table cellpadding='8' class='table table-striped border border-black-3' style='max-width: 80%; margin: 0 auto;'>
-        <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Grupo</th>
-            <th>Preço</th>
-            <th class="text-center">Ações</th>
-        </tr>
-        <?php foreach ($produtos as $produto): ?>
+<body>
+    <!-- Formulário para cadastrar produtos -->
+    <div class="container mt-3" id="cadastro_produtos"></div>
+    <form method="POST">
+        <label for="nome">Nome:</label>
+        <input type="text" name="nome" id="nome" required>
+        <label for="descricao">Descrição:</label>
+        <input type="text" name="descricao" id="descricao">
+        <label for="grupo_id">Grupo:</label>
+        <select name="grupo_id" id="grupo_id" required>
+            <?php
+            $sql = "SELECT id, nome FROM grupos ORDER BY id";
+            $stmt = $pdo->query($sql);
+            $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($grupos as $grupo) {
+                echo "<option value='{$grupo['id']}'>{$grupo['nome']}</option>";
+            }
+            ?>
+        </select>
+        <label for="preco">Preço:</label>
+        <input type="number" name="preco" id="preco" step="0.01" required>
+        <button type="submit">Cadastrar</button>
+        <button type="reset">Limpar</button>
+        <!-- <button><a href="listar_grupos.php" target="_blank">Listar Grupos</a></button> -->
+        <a href="index.php" style="display: inline-block; padding: 8px 12px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">Página Inicial</a>
+    </form>
+    </div>
+
+    <!-- Pesquisa de Produtos -->
+    <div class="box-search">
+        <input class="form-control w-25" type="search" id="pesquisar" placeholder="Pesquisar ...">
+        <button onclick="searchData()" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+            </svg></button>
+    </div>
+
+
+    <!-- Listagem de Produtos -->
+
+
+    <h2 class="text-center m-2">Produtos</h2>
+    <div class="overflow-y-auto" style="max-height: 450px; max-width: 90%; margin: 0 auto;">
+        <table cellpadding='8' class='table table-striped border border-black-3' style='max-width: 80%; margin: 0 auto;'>
             <tr>
-                <td><?= $produto['id'] ?></td>
-                <td><?= htmlspecialchars($produto['nome']) ?></td>
-                <td><?= htmlspecialchars($produto['descricao']) ?></td>
-                <td><?= $produto['grupo_id'] ?></td>
-                <td><?= $produto['preco'] ?></td>
-                <td>
-                    <div class=" col-12 d-flex justify-content-between">
-                        <a class="btn btn-primary p-1 bottons col-5" href="editar_produto.php?id=<?= $produto['id'] ?>">Editar</a>
-                        <a class="btn btn-danger p-1  bottons col-5" href="excluir_produto.php?id=<?= $produto['id'] ?>"
-                            onclick="return confirm('Tem certeza que deseja excluir este grupo e todos os seus produtos?');">Excluir</a>
-                    </div>
-                </td>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Grupo</th>
+                <th>Preço</th>
+                <th class="text-center">Ações</th>
             </tr>
-        <?php endforeach; ?>
-</div>
-</table>
+            <?php foreach ($produtos as $produto): ?>
+                <tr>
+                    <td><?= $produto['id'] ?></td>
+                    <td><?= htmlspecialchars($produto['nome']) ?></td>
+                    <td><?= htmlspecialchars($produto['descricao']) ?></td>
+                    <td><?= $produto['grupo_id'] ?></td>
+                    <td><?= $produto['preco'] ?></td>
+                    <td>
+                        <div class=" col-12 d-flex justify-content-between">
+                            <a class="btn btn-primary p-1 bottons col-5" href="editar_produto.php?id=<?= $produto['id'] ?>">Editar</a>
+                            <a class="btn btn-danger p-1  bottons col-5" href="excluir_produto.php?id=<?= $produto['id'] ?>"
+                                onclick="return confirm('Tem certeza que deseja excluir este produto?');">Excluir</a>
+                        </div>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+    </div>
+    </table>
+</body>
+<script>
+    var search = document.getElementById("pesquisar");
+
+    //verifica a tecla apertada e chama a função searchData() se for Enter
+    search.addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+            searchData();
+        }
+    });
+
+    function searchData() {
+        window.location = 'cadastro_produtos.php?search=' + search.value;
+    }
+</script>
