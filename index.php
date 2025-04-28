@@ -10,9 +10,16 @@ include_once 'connection.php';
         <div class="container col-12" id="paginainicial">
             <h1 class="mt-5 ">Bem-vindo à Tabela de Preços</h1>
             <p class="mt-3 botao text-center">Clique nos botões abaixo para navegar pela Tabela de Preços.</p>
-            <button class="btn btn-primary mt-2" color="white"><a class="links" target="_blank" href="tabela_precos.php">Tabela de Preços</a></button>
-            <button class="btn btn-primary mt-2 " color="white"><a class="links" target="_blank" href="cadastro_grupos.php">Cadastro de Grupos</a></button>
-            <button class="btn btn-primary mt-2 " color="white"><a class="links" target="_blank" href="cadastro_produtos.php">Cadastro de Produtos</a></button>
+
+            <a class="btn btn-primary mt-2" target="_blank" href="tabela_precos.php" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center; font-size: 20px;">
+                Tabela de Preços
+            </a>
+
+            <a class=" btn btn-primary mt-2 " color=" white" target="_blank" href="cadastro_grupos.php" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Cadastro de Grupos</a>
+
+            <a class="btn btn-primary mt-2 " color="white" target="_blank" href="cadastro_produtos.php" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Cadastro de Produtos</a>
+
+
         </div>
     </main>
 

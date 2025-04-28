@@ -35,10 +35,15 @@ body .links:hover {
 }
 
 main {
+    background-color: #000000;
     background-image: url("fundo.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
+}
+
+main .container a:hover {
+    background-color: cadetblue;
 }
 
 #paginainicial {

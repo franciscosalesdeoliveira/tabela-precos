@@ -40,14 +40,14 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 
     <!-- Formulário para cadastrar grupos -->
-    <div class="container mt-3" id="cadastro_grupos">
+    <div class="container mt-3" style="max-width: 80%; margin: 0 auto;">
         <form method="POST">
             <label for="grupo">Grupo:</label>
             <input type="text" name="grupo" id="grupo" required>
-            <button type="submit">Cadastrar</button>
-            <button type="reset">Limpar</button>
+            <button class="btn btn-primary mt-2 " color="white" target="_blank" style="width:10%; height: 30px;  color: white; ;font-size: 20px;" type="submit">Cadastrar</button>
+            <button class="btn btn-primary mt-2 " color="white" target="_blank" style="width:10%; height: 30px;  color: white; ;font-size: 20px;" type="reset">Limpar</button>
             <!-- <button><a href="listar_grupos.php" target="_blank">Listar Grupos</a></button> -->
-            <button><a href="index.php">Página Inicial</a></button>
+            <a class="btn btn-primary mt-2 " color="white" target="_blank" style="width:10%; height: 30px;  color: white; ;font-size: 20px;" href="index.php">Página Inicial</a>
         </form>
     </div>
 
