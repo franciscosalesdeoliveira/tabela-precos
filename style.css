@@ -65,3 +65,12 @@ main .container a:hover {
     font-size: 20px;
     text-align: center;
 }
+
+/* Tela de Grupos */
+
+.container .grupos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr, 1fr, 1fr);
+    background-color: aqua;
+}

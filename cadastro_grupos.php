@@ -40,20 +40,19 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 
     <!-- Formulário para cadastrar grupos -->
-    <div class="container mt-3" style="max-width: 80%; margin: 0 auto;">
+    <div class="grupos mt-3" id="grupos" style="max-width: 80%; margin: 0 auto; border: 1px solid black;">
         <form method="POST">
-            <label for="grupo">Grupo:</label>
-            <input type="text" name="grupo" id="grupo" required>
-            <button class="btn btn-primary mt-2 " color="white" target="_blank" style="width:10%; height: 30px;  color: white; ;font-size: 20px;" type="submit">Cadastrar</button>
-            <button class="btn btn-primary mt-2 " color="white" target="_blank" style="width:10%; height: 30px;  color: white; ;font-size: 20px;" type="reset">Limpar</button>
-            <!-- <button><a href="listar_grupos.php" target="_blank">Listar Grupos</a></button> -->
-            <a class="btn btn-primary mt-2 " color="white" target="_blank" style="width:10%; height: 30px;  color: white; ;font-size: 20px;" href="index.php">Página Inicial</a>
+            <label class="form-label" style="font-size: 20px; font-weight: bold;" for="grupo">Grupo:</label>
+            <input class="form-control w-50 item" type="text" name="grupo" id="grupo" required>
+            <button class="btn btn-primary mt-2" color="white" style="width:15%; height: 40px;  color: white; ;font-size: 20px;" type="submit">Cadastrar</button>
+            <button class="btn btn-primary mt-2 item" color="white" target="_blank" style="width:15%; height: 40px;  color: white; ;font-size: 20px;" type="reset">Limpar</button>
+            <a class="btn btn-primary mt-2 item" color="white" target="_blank" style="width:15%; height: 40px;  color: white; ;font-size: 20px;" href="index.php">Página Inicial</a>
         </form>
     </div>
 
     <!-- formulario de pesquisa -->
 
-    <div class="box-search">
+    <div class="box-search mt-5">
         <input class="form-control w-25" type="search" id="pesquisar" placeholder="Pesquisar ...">
         <button onclick="searchData()" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
