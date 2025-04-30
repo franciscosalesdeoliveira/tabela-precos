@@ -37,22 +37,24 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
-<body>
+<body class="">
 
     <!-- Formulário para cadastrar grupos -->
-    <div class="grupos mt-3" id="grupos" style="max-width: 80%; margin: 0 auto; border: 1px solid black;">
+    <div class=" container grupos mt-3" id="grupos" style="max-width: 80%; margin: 0 auto;">
         <form method="POST">
-            <label class="form-label" style="font-size: 20px; font-weight: bold;" for="grupo">Grupo:</label>
-            <input class="form-control w-50 item" type="text" name="grupo" id="grupo" required>
-            <button class="btn btn-primary mt-2" color="white" style="width:15%; height: 40px;  color: white; ;font-size: 20px;" type="submit">Cadastrar</button>
-            <button class="btn btn-primary mt-2 item" color="white" target="_blank" style="width:15%; height: 40px;  color: white; ;font-size: 20px;" type="reset">Limpar</button>
-            <a class="btn btn-primary mt-2 item" color="white" target="_blank" style="width:15%; height: 40px;  color: white; ;font-size: 20px;" href="index.php">Página Inicial</a>
+            <div class="botao">
+                <label class="form-label" style="font-size: 20px; font-weight: bold;" for="grupo">Grupo:</label>
+                <input class="form-control w-80 m-2" type="text" name="grupo" id="grupo" style="width: 80%;" required>
+                <button class="btn btn-success m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="submit">Cadastrar</button>
+                <button class="btn btn-warning m-2" color="white" target="_blank" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="reset">Limpar</button>
+                <a class="btn btn-primary m-2" color="white" target="_blank" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" href="index.php">Página Inicial</a>
+            </div>
         </form>
     </div>
 
     <!-- formulario de pesquisa -->
 
-    <div class="box-search mt-5">
+    <div class="box-search m-5">
         <input class="form-control w-25" type="search" id="pesquisar" placeholder="Pesquisar ...">
         <button onclick="searchData()" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
@@ -61,29 +63,32 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
     <!-- Listagem de Grupos -->
-    <h2 class="text-center m-2">Grupos</h2>
-    <div class="overflow-y-auto" style="max-height: 450px; max-width: 80%; margin: 0 auto;">
-        <table cellpadding='8' class='table table-striped border border-black-3' style='max-width: 80%; margin: 0 auto;'>
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th class="text-center">Ações</th>
-            </tr>
-            <?php foreach ($grupos as $grupo): ?>
+    <div style="max-width: 80%; margin: 0 auto;">
+        <!-- <h2 class="text-center m-2">Grupos</h2> -->
+        <div class="overflow-y-auto" style="max-height: 450px;">
+            <table cellpadding='8' class='table table-striped' style='max-width: 80%; margin: 0 auto;'>
                 <tr>
-                    <td><?= $grupo['id'] ?></td>
-                    <td><?= htmlspecialchars($grupo['nome']) ?></td>
-                    <td>
-                        <div class=" col-12 d-flex justify-content-between">
-                            <a class="btn btn-primary p-1 bottons col-5" href="editar_grupo.php?id=<?= $grupo['id'] ?>">Editar</a>
-                            <a class="btn btn-danger p-1  bottons col-5" href="excluir_grupo.php?id=<?= $grupo['id'] ?>"
-                                onclick="return confirm('Tem certeza que deseja excluir este grupo e todos os seus produtos?');">Excluir</a>
-                        </div>
-                    </td>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th class="text-center">Ações</th>
                 </tr>
-            <?php endforeach; ?>
+                <?php foreach ($grupos as $grupo): ?>
+                    <tr>
+                        <td><?= $grupo['id'] ?></td>
+                        <td><?= htmlspecialchars($grupo['nome']) ?></td>
+                        <td>
+                            <div class=" col-12 d-flex justify-content-between">
+                                <a class="btn btn-primary p-1 bottons col-5" href="editar_grupo.php?id=<?= $grupo['id'] ?>">Editar</a>
+                                <a class="btn btn-danger p-1  bottons col-5" href="excluir_grupo.php?id=<?= $grupo['id'] ?>"
+                                    onclick="return confirm('Tem certeza que deseja excluir este grupo e todos os seus produtos?');">Excluir</a>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
     </div>
-    </table>
+
 </body>
 
 <script>

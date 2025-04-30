@@ -5,7 +5,6 @@ include_once 'connection.php';
 ?>
 
 <body>
-
     <main>
         <div class="container col-12" id="paginainicial">
             <h1 class="mt-5 ">Bem-vindo à Tabela de Preços</h1>
@@ -19,10 +18,12 @@ include_once 'connection.php';
 
             <a class="btn btn-primary mt-2 " color="white" target="_blank" href="cadastro_produtos.php" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Cadastro de Produtos</a>
 
+            <a class="btn btn-primary mt-2 " color="white" target="_blank" href="configuracoes.php" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Configurações Tabela</a>
 
+            <a class="btn btn-primary mt-2 " color="white" target="_blank" href="/tabela-pronta/tabela.html" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Tabela Pronta</a>
         </div>
     </main>
-
 </body>
+
 
 </html>

@@ -4,11 +4,11 @@
     box-sizing: border-box;
 }
 
-
 body .links {
     text-decoration: none;
     color: #ffffff;
     font-size: 20px;
+
 }
 
 body .links:hover {
@@ -34,7 +34,7 @@ body .links:hover {
     gap: 0.1%;
 }
 
-main {
+body {
     background-color: #000000;
     background-image: url("fundo.jpg");
     background-size: cover;
@@ -43,7 +43,8 @@ main {
 }
 
 main .container a:hover {
-    background-color: cadetblue;
+    background-color: rgba(23, 51, 207, 0.6);
+    font-weight: bold;
 }
 
 #paginainicial {
@@ -68,9 +69,17 @@ main .container a:hover {
 
 /* Tela de Grupos */
 
-.container .grupos {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr, 1fr, 1fr);
-    background-color: aqua;
+
+.container .botao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+/* Tabela de Preços */
+
+table {
+    transition: all .2s ease-in;
+    cursor: pointer;
 }

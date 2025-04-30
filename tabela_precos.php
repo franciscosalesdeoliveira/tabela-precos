@@ -2,16 +2,31 @@
 $titulo = "Tabela de Preços";
 include_once 'header.php';
 include_once 'connection.php';
+// include_once 'limitar_grupo.php';
 ?>
+
+<style>
+    tr:hover td {
+     
+        background-image: linear-gradient(to right, rgb(18, 73, 121), rgb(19, 33, 39));
+        transform: scale(1.013);
+        /* cuidado: esse transform ainda não funciona bem em <td> diretamente */
+        box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2), -1px -1px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease-in;
+        color: white;
+        font-weight: bold;
+    }
+
+
+    /* .tr-hover {
+        background-color: #f5f5f5;
+        transform: scale(1.02);
+        box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2), -1px -1px 8px rgba(0, 0, 0, 0.2);
+    } */
+</style>
 
 <body>
 
-    <form method="GET">
-        <label for="limite">Limite de produtos por grupo:</label>
-        <input type="number" name="limite" id="limite" min="1" value="<?= isset($_GET['limite']) ? $_GET['limite'] : 5 ?>">
-        <button type="submit">Aplicar</button>
-    </form>
-    <hr>
 
 
     <?php
