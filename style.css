@@ -83,3 +83,132 @@ table {
     transition: all .2s ease-in;
     cursor: pointer;
 }
+
+/* Tabela de Produtos */
+
+.cadastro_produtos {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 80%;
+    padding: 10px;
+    margin: 0 auto;
+    border: 2px solid blueviolet;
+    gap: 10px;
+    font-weight: bold;
+    color: white;
+}
+
+.cadastro_produtos_1 {
+    border: 2px solid blueviolet;
+
+}
+
+.cadastro_produtos_2 {
+    border: 2px solid blueviolet;
+    display: flex;
+    justify-content: space-around;
+    padding: 5px;
+    gap: 5px;
+    flex-direction: column;
+}
+
+.cadastro_produtos_2>a {
+    padding: 5px;
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.cadastro_produtos_2>a:hover {
+    border: 1px solid blueviolet;
+    background-color: rgba(23, 51, 207, 0.6);
+    scale: 1.01;
+}
+
+.itens {
+    margin: 5px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.pag_inicial {
+    margin: 200px;
+    border: 2px solid blueviolet;
+    display: flex;
+    justify-content: flex-end;
+    max-width: 80%;
+    margin: 20px auto;
+    padding: 10px;
+}
+
+/* Editar de Produtos */
+
+/*Secao principal
+apagar depois*/
+#editar_produto {
+    margin: 0 auto;
+    background-color: #000000;
+    max-height: 90vh;
+}
+
+.texto_editar_produto {
+    display: flex;
+    display: block;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* container pai*/
+.editar_produto {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 90%;
+    padding: 10px;
+    margin: 0 auto;
+    border: 2px solid rgb(223, 214, 231);
+    gap: 10px;
+    font-weight: bold;
+    color: white;
+}
+
+
+/*Div direita*/
+.alter_itens {
+    border: 1px solid darkblue;
+    gap: 10px;
+    
+}
+
+/* campos da tabela para alterar*/
+.editar_itens {
+    margin: 5px;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
+
+}
+
+/* Div esquerda*/
+.salvar_alter {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 10px;
+    border: 1px solid white;
+    
+}
+
+/*botão dentro da div esquerda*/
+.salvar_alter button {
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    font-weight: bold;
+
+}

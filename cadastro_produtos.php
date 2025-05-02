@@ -1,7 +1,7 @@
 <?php
 $titulo = "Cadastro de Produtos";
-include_once 'connection.php';
-include_once 'header.php';
+require_once 'connection.php';
+require_once 'header.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $grupo = $_POST['grupo'];
@@ -43,35 +43,54 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <body>
-    <!-- Formulário para cadastrar produtos -->
-    <div class="container mt-3" id="cadastro_produtos"></div>
-    <form method="POST">
-        <label for="nome">Nome:</label>
-        <input type="text" name="nome" id="nome" required>
-        <label for="descricao">Descrição:</label>
-        <input type="text" name="descricao" id="descricao">
-        <label for="grupo_id">Grupo:</label>
-        <select name="grupo_id" id="grupo_id" required>
-            <?php
-            $sql = "SELECT id, nome FROM grupos ORDER BY id";
-            $stmt = $pdo->query($sql);
-            $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($grupos as $grupo) {
-                echo "<option value='{$grupo['id']}'>{$grupo['nome']}</option>";
-            }
-            ?>
-        </select>
-        <label for="preco">Preço:</label>
-        <input type="number" name="preco" id="preco" step="0.01" required>
-        <button type="submit">Cadastrar</button>
-        <button type="reset">Limpar</button>
-        <!-- <button><a href="listar_grupos.php" target="_blank">Listar Grupos</a></button> -->
-        <a href="index.php" style="display: inline-block; padding: 8px 12px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">Página Inicial</a>
-    </form>
-    </div>
+    <section>
+        <!-- Formulário para cadastrar produtos -->
+        <div class="cadastro_produtos mt-3">
+            <div class="cadastro_produtos_1">
+                <form method="POST">
+                    <div class="itens">
+                        <label for="nome">Nome:</label>
+                        <input type="text" name="nome" id="nome" required>
+                    </div>
+                    <div class="itens">
+                        <label for="descricao">Descrição:</label>
+                        <input type="text" name="descricao" id="descricao">
+                    </div>
+                    <div class="itens">
+                        <label for="grupo_id">Grupo:</label>
+                        <select name="grupo_id" id="grupo_id" required>
+                            <?php
+                            $sql = "SELECT id, nome FROM grupos ORDER BY id";
+                            $stmt = $pdo->query($sql);
+                            $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            foreach ($grupos as $grupo) {
+                                echo "<option value='{$grupo['id']}'>{$grupo['nome']}</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="itens">
+                        <label for="preco">Preço:</label>
+                        <input type="number" name="preco" id="preco" step="0.01" required>
+                    </div>
+                    <div class="itens">
+                        <button class="btn btn-warning mt-2" type="reset">Limpar</button>
+                        <button class="btn btn-success mt-2" type="submit">Cadastrar</button>
+                    </div>
+            </div>
+            </form>
+            <div class="cadastro_produtos_2">
+                <h3 class="text-center">Links Úteis</h3>
+                <a href="index.php" class="btn btn-primary " ;>Página Inicial</a>
+                <a href="tabela_grupos.php" class="btn btn-primary " ;>Cadastro de Grupos</a>
+                <a href="configuracoes.php" class="btn btn-primary " ;>Configurações Tabela</a>
+
+            </div>
+        </div>
+    </section>
 
     <!-- Pesquisa de Produtos -->
-    <div class="box-search">
+    <div class="box-search mt-3">
         <input class="form-control w-25" type="search" id="pesquisar" placeholder="Pesquisar ...">
         <button onclick="searchData()" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
@@ -82,35 +101,38 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Listagem de Produtos -->
 
 
-    <h2 class="text-center m-2">Produtos</h2>
-    <div class="overflow-y-auto" style="max-height: 450px; max-width: 90%; margin: 0 auto;">
-        <table cellpadding='8' class='table table-striped border border-black-3' style='max-width: 80%; margin: 0 auto;'>
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Descrição</th>
-                <th>Grupo</th>
-                <th>Preço</th>
-                <th class="text-center">Ações</th>
-            </tr>
-            <?php foreach ($produtos as $produto): ?>
+    <section>
+        <h2 class="text-center m-2" style="color: white;">Produtos</h2>
+        <div class="overflow-y-auto" tabela-produtos style="max-height: 450px; max-width: 90%; margin: 0 auto;">
+            <table cellpadding='8' class="table table-striped border border-black-3" style='max-width: 80%; margin: 0 auto;'>
                 <tr>
-                    <td><?= $produto['id'] ?></td>
-                    <td><?= htmlspecialchars($produto['nome']) ?></td>
-                    <td><?= htmlspecialchars($produto['descricao']) ?></td>
-                    <td><?= $produto['grupo_id'] ?></td>
-                    <td><?= $produto['preco'] ?></td>
-                    <td>
-                        <div class=" col-12 d-flex justify-content-between">
-                            <a class="btn btn-primary p-1 bottons col-5" href="editar_produto.php?id=<?= $produto['id'] ?>">Editar</a>
-                            <a class="btn btn-danger p-1  bottons col-5" href="excluir_produto.php?id=<?= $produto['id'] ?>"
-                                onclick="return confirm('Tem certeza que deseja excluir este produto?');">Excluir</a>
-                        </div>
-                    </td>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th>Grupo</th>
+                    <th>Preço</th>
+                    <th class="text-center">Ações</th>
                 </tr>
-            <?php endforeach; ?>
-    </div>
-    </table>
+                <?php foreach ($produtos as $produto): ?>
+                    <tr>
+                        <td><?= $produto['id'] ?></td>
+                        <td><?= htmlspecialchars($produto['nome']) ?></td>
+                        <td><?= htmlspecialchars($produto['descricao']) ?></td>
+                        <td><?= $produto['grupo_id'] ?></td>
+                        <td><?= $produto['preco'] ?></td>
+                        <td>
+                            <div class=" col-12 d-flex justify-content-between">
+                                <a class="btn btn-primary p-1 bottons col-5" href="editar_produto.php?id=<?= $produto['id'] ?>">Editar</a>
+                                <a class="btn btn-danger p-1  bottons col-5" href="excluir_produto.php?id=<?= $produto['id'] ?>"
+                                    onclick="return confirm('Tem certeza que deseja excluir este produto?');">Excluir</a>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </section>
+
 </body>
 <script>
     var search = document.getElementById("pesquisar");
