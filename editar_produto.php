@@ -51,6 +51,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
         <div class="editar_produto mt-3 ">
+            <div class="salvar_alter">
+
+            </div>
             <div class="alter_itens" style="border: 1px solid darkslateblue;">
                 <form method="post">
                     <input type="hidden" name="id" value="<?= $id ?>">
@@ -79,12 +82,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <label>Preço:</label>
                         <input type="number" name="preco" value="<?= $produto['preco'] ?>" step="0.01" required>
                     </div>
+                    <div class="button"><button class="btn btn-success" type="submit">Salvar</button></div>
             </div>
             </form>
-            <div class="salvar_alter">
-                <button class="btn btn-success mt-2" type="submit">Salvar</button>
-                
-            </div>
+
         </div>
     </section>]
 </body>

@@ -82,7 +82,7 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="cadastro_produtos_2">
                 <h3 class="text-center">Links Úteis</h3>
                 <a href="index.php" class="btn btn-primary " ;>Página Inicial</a>
-                <a href="tabela_grupos.php" class="btn btn-primary " ;>Cadastro de Grupos</a>
+                <a href="cadastro_grupos.php" class="btn btn-primary" target=_blank ;>Cadastro de Grupos</a>
                 <a href="configuracoes.php" class="btn btn-primary " ;>Configurações Tabela</a>
 
             </div>
@@ -104,26 +104,26 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <section>
         <h2 class="text-center m-2" style="color: white;">Produtos</h2>
         <div class="overflow-y-auto" tabela-produtos style="max-height: 450px; max-width: 90%; margin: 0 auto;">
-            <table cellpadding='8' class="table table-striped border border-black-3" style='max-width: 80%; margin: 0 auto;'>
+            <table cellpadding='8' class="table table-striped border border-black-3" style='max-width: 90%; margin: 0 auto;'>
                 <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Descrição</th>
-                    <th>Grupo</th>
-                    <th>Preço</th>
+                    <th class="text-center">ID</th>
+                    <th class="text-center">Nome</th>
+                    <th class="text-center">Descrição</th>
+                    <th class="text-center">Grupo</th>
+                    <th class="text-center">Preço</th>
                     <th class="text-center">Ações</th>
                 </tr>
                 <?php foreach ($produtos as $produto): ?>
                     <tr>
-                        <td><?= $produto['id'] ?></td>
-                        <td><?= htmlspecialchars($produto['nome']) ?></td>
-                        <td><?= htmlspecialchars($produto['descricao']) ?></td>
-                        <td><?= $produto['grupo_id'] ?></td>
-                        <td><?= $produto['preco'] ?></td>
-                        <td>
+                        <td class="text-center"><?= $produto['id'] ?></td>
+                        <td class="text-center"><?= htmlspecialchars($produto['nome']) ?></td>
+                        <td class="text-center"><?= htmlspecialchars($produto['descricao']) ?></td>
+                        <td class="text-center"><?= $produto['grupo_id'] ?></td>
+                        <td class="text-center"><?= $produto['preco'] ?></td>
+                        <td class="text-center">
                             <div class=" col-12 d-flex justify-content-between">
-                                <a class="btn btn-primary p-1 bottons col-5" href="editar_produto.php?id=<?= $produto['id'] ?>">Editar</a>
-                                <a class="btn btn-danger p-1  bottons col-5" href="excluir_produto.php?id=<?= $produto['id'] ?>"
+                                <a class="btn btn-primary p-1 bottons w-50 text-center" href="editar_produto.php?id=<?= $produto['id'] ?>">Editar</a>
+                                <a class="btn btn-danger p-1  bottons w-50 text-center" href="excluir_produto.php?id=<?= $produto['id'] ?>"
                                     onclick="return confirm('Tem certeza que deseja excluir este produto?');">Excluir</a>
                             </div>
                         </td>

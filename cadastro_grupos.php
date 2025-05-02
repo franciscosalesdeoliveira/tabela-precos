@@ -68,15 +68,15 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="overflow-y-auto" style="max-height: 450px;">
             <table cellpadding='8' class='table table-striped' style='max-width: 80%; margin: 0 auto;'>
                 <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
+                    <th class="text-center">ID</th>
+                    <th class="text-center">Nome</th>
                     <th class="text-center">Ações</th>
                 </tr>
                 <?php foreach ($grupos as $grupo): ?>
                     <tr>
-                        <td><?= $grupo['id'] ?></td>
-                        <td><?= htmlspecialchars($grupo['nome']) ?></td>
-                        <td>
+                        <td class="text-center"><?= $grupo['id'] ?></td>
+                        <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
+                        <td class="text-center">
                             <div class=" col-12 d-flex justify-content-between">
                                 <a class="btn btn-primary p-1 bottons col-5" href="editar_grupo.php?id=<?= $grupo['id'] ?>">Editar</a>
                                 <a class="btn btn-danger p-1  bottons col-5" href="excluir_grupo.php?id=<?= $grupo['id'] ?>"
