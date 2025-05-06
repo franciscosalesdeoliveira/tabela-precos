@@ -7,6 +7,7 @@ include_once 'connection.php';
 $limite = isset($_GET['limite']) ? intval($_GET['limite']) : 5;
 $tempo = isset($_GET['tempo']) ? intval($_GET['tempo']) : 10;
 $tema = isset($_GET['tema']) ? $_GET['tema'] : 'padrao';
+$grupo_selecionado = isset($_GET['grupo']) ? $_GET['grupo'] : 'todos';
 
 // Lista de temas disponíveis
 $temas = [
@@ -14,6 +15,17 @@ $temas = [
     'supermercado' => 'Supermercado (Verde)',
     'padaria' => 'Padaria (Amarelo)'
 ];
+
+// Buscar grupos disponíveis no banco de dados
+$grupos = ['todos' => 'Todos os Grupos'];
+try {
+    $stmt = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $grupos[$row['id']] = $row['nome'];
+    }
+} catch (PDOException $e) {
+    // Se ocorrer erro, mantém apenas a opção "Todos"
+}
 ?>
 
 <div class="container mt-5">
@@ -25,6 +37,19 @@ $temas = [
                 <div class="card-body">
                     <!-- Formulário Unificado -->
                     <form id="formConfiguracoes" action="tabela_precos.php" method="GET">
+                        <!-- Seleção de Grupo -->
+                        <div class="mb-3">
+                            <label for="grupo" class="form-label fw-bold">Grupo a ser exibido:</label>
+                            <select class="form-select" id="grupo" name="grupo">
+                                <?php foreach ($grupos as $id => $nome): ?>
+                                    <option value="<?= $id ?>" <?= ($grupo_selecionado == $id) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($nome) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">Escolha um grupo específico ou todos os grupos.</div>
+                        </div>
+
                         <!-- Limite de Itens -->
                         <div class="mb-3">
                             <label for="limite" class="form-label fw-bold">Quantidade de itens por grupo:</label>

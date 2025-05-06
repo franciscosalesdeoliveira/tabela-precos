@@ -11,6 +11,7 @@ $limiteGrupo = isset($_GET['limite']) && is_numeric($_GET['limite']) ? (int)$_GE
 $tempoSlide = isset($_GET['tempo']) && is_numeric($_GET['tempo']) ? (int)$_GET['tempo'] * 1000 : 5000;
 $tempoExtraPorProduto = 500; // Adiciona 0.5s por produto
 $tempoRolagem = isset($_GET['rolagem']) && is_numeric($_GET['rolagem']) ? (int)$_GET['rolagem'] : 20; // Tempo de rolagem em segundos
+$grupoSelecionado = isset($_GET['grupo']) ? $_GET['grupo'] : 'todos';
 
 // Definir estilo de tema (pode vir do banco de dados ou configurações)
 $tema = isset($_GET['tema']) ? $_GET['tema'] : 'padrao';
@@ -198,24 +199,35 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 $temColuna = false;
             }
 
-            // Consulta SQL
+            // Montar a consulta SQL com filtro de grupo se necessário
             if ($dbType == 'pgsql') {
                 $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
-                              p.id as produto_id, g.id as grupo_id" .
+                      p.id as produto_id, g.id as grupo_id" .
                     ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
-                       FROM produtos p
-                       JOIN grupos g ON p.grupo_id = g.id
-                       ORDER BY g.nome, p.nome";
+               FROM produtos p
+               JOIN grupos g ON p.grupo_id = g.id";
             } else {
                 $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
-                              p.id as produto_id, g.id as grupo_id" .
+                      p.id as produto_id, g.id as grupo_id" .
                     ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
-                       FROM produtos p
-                       JOIN grupos g ON p.grupo_id = g.id
-                       ORDER BY g.nome, p.nome";
+               FROM produtos p
+               JOIN grupos g ON p.grupo_id = g.id";
             }
 
+            // Adicionar filtro de grupo se não for "todos"
+            if ($grupoSelecionado !== 'todos') {
+                $sql .= " WHERE g.id = :grupo_id";
+            }
+
+            $sql .= " ORDER BY g.nome, p.nome";
+
             $stmt = $pdo->prepare($sql);
+
+            // Bind do parâmetro se necessário
+            if ($grupoSelecionado !== 'todos') {
+                $stmt->bindParam(':grupo_id', $grupoSelecionado, PDO::PARAM_INT);
+            }
+
             $stmt->execute();
             $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -227,12 +239,15 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     $grupos[$produto['grupo']][] = $produto;
                 }
 
-                // ... (código anterior permanece igual)
+                // Se foi selecionado apenas um grupo, desativa o carrossel
+                $mostrarCarrossel = ($grupoSelecionado === 'todos');
 
-                echo '<div id="grupoCarousel" class="carousel slide" data-bs-ride="carousel">';
-                echo '<div class="carousel-inner">';
+                if ($mostrarCarrossel) {
+                    echo '<div id="grupoCarousel" class="carousel slide" data-bs-ride="carousel">';
+                    echo '<div class="carousel-inner">';
+                }
 
-                $index = 0; // Inicializa o índice
+                $index = 0;
                 $primeiro = true;
 
                 foreach ($grupos as $nomeGrupo => $listaProdutos) {
@@ -241,8 +256,9 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     $tempoBaseRolagem = $tempoRolagem * 1000;
                     $modoExibicao = $numProdutos > 10 ? 'grande' : 'normal';
 
-                    // Item do carrossel
-                    echo '<div class="carousel-item ' . ($primeiro ? 'active' : '') . '" data-bs-interval="' . ($modoExibicao == 'grande' ? max($tempoGrupo, $tempoBaseRolagem) : $tempoGrupo) . '">';
+                    if ($mostrarCarrossel) {
+                        echo '<div class="carousel-item ' . ($primeiro ? 'active' : '') . '" data-bs-interval="' . ($modoExibicao == 'grande' ? max($tempoGrupo, $tempoBaseRolagem) : $tempoGrupo) . '">';
+                    }
 
                     // Cabeçalho do grupo
                     echo '<div class="grupo-header ' . $estiloAtual['header_bg'] . ' ' . $estiloAtual['text'] . '">';
@@ -294,16 +310,18 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                         echo '</div>'; // fecha table-container
                     }
 
-                    echo '</div>'; // fecha carousel-item
+                    if ($mostrarCarrossel) {
+                        echo '</div>'; // fecha carousel-item
+                    }
 
                     $primeiro = false;
                     $index++;
                 }
 
-                echo '</div>'; // fecha carousel-inner
-                echo '</div>'; // fecha grupoCarousel
-
-                // ... (código posterior permanece igual)
+                if ($mostrarCarrossel) {
+                    echo '</div>'; // fecha carousel-inner
+                    echo '</div>'; // fecha grupoCarousel
+                }
             }
 
             $stmt = null;

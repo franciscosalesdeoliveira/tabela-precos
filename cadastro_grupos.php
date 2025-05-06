@@ -2,106 +2,358 @@
 $titulo = "Cadastro de Grupos";
 include_once 'connection.php';
 include_once 'header.php';
+include_once 'functions.php'; // Arquivo sugerido para funções auxiliares
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $grupo = $_POST['grupo'];
+// Inicializar variáveis para mensagens de feedback
+$mensagem = '';
+$tipo_mensagem = '';
 
-    $sql = "INSERT INTO grupos (nome) VALUES (:grupo)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':grupo', $grupo);
-    $stmt->execute();
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit;
+// Geração de token CSRF
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-if (!empty($_GET['search'])) {
-    $data = "%" . $_GET['search'] . "%"; // adiciona os % para o LIKE
-    $sql = "SELECT * FROM grupos 
-    WHERE unaccent(nome) ILIKE unaccent(:data)
-       OR CAST(id AS TEXT) ILIKE :data
-    ORDER BY id ASC";
-    // unaccent é usado para remover acentos e permitir comparação sem acentuação
-    // ILIKE é usado para comparação sem diferenciar maiúsculas de minúsculas
-    // CAST(id AS TEXT) é usado para permitir a pesquisa pelo ID como texto
+// Processamento do formulário
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verificar token CSRF
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $mensagem = "Erro de validação do formulário.";
+        $tipo_mensagem = "danger";
+    } else {
+        // Validação de entrada
+        $grupo = trim($_POST['grupo']);
+        
+        if (empty($grupo)) {
+            $mensagem = "O nome do grupo não pode estar vazio.";
+            $tipo_mensagem = "danger";
+        } else {
+            try {
+                $sql = "INSERT INTO grupos (nome) VALUES (:grupo)";
+                $stmt = $pdo->prepare($sql);
+                $stmt->bindValue(':grupo', $grupo);
+                $stmt->execute();
+                
+                // Gerar nova mensagem e token após submissão bem-sucedida
+                $mensagem = "Grupo cadastrado com sucesso!";
+                $tipo_mensagem = "success";
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                
+                // Redirecionamento opcional (comentado para mostrar a mensagem)
+                // header("Location: " . $_SERVER['PHP_SELF'] . "?success=1");
+                // exit;
+            } catch (PDOException $e) {
+                $mensagem = "Erro ao cadastrar: " . filter_var($e->getMessage(), FILTER_SANITIZE_SPECIAL_CHARS);
+                $tipo_mensagem = "danger";
+            }
+        }
+    }
+}
 
+// Configurações de paginação
+$registros_por_pagina = 10;
+$pagina_atual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$offset = ($pagina_atual - 1) * $registros_por_pagina;
+
+// Parâmetros de ordenação
+$ordem_coluna = isset($_GET['ordem']) ? $_GET['ordem'] : 'id';
+$ordem_direcao = isset($_GET['direcao']) ? $_GET['direcao'] : 'ASC';
+
+// Lista de colunas permitidas para ordenação
+$colunas_permitidas = ['id', 'nome'];
+if (!in_array($ordem_coluna, $colunas_permitidas)) {
+    $ordem_coluna = 'id';
+}
+
+// Direções permitidas
+if (!in_array($ordem_direcao, ['ASC', 'DESC'])) {
+    $ordem_direcao = 'ASC';
+}
+
+// Consulta para contagem total
+$sql_count = "SELECT COUNT(*) FROM grupos";
+$stmt_count = $pdo->prepare($sql_count);
+$stmt_count->execute();
+$total_registros = $stmt_count->fetchColumn();
+$total_paginas = ceil($total_registros / $registros_por_pagina);
+
+// Pesquisa
+if (!empty($_GET['search'])) {
+    $data = "%" . $_GET['search'] . "%";
+    $sql = "SELECT * FROM grupos 
+            WHERE unaccent(nome) ILIKE unaccent(:data)
+            OR CAST(id AS TEXT) ILIKE :data
+            ORDER BY $ordem_coluna $ordem_direcao
+            LIMIT :limit OFFSET :offset";
+    
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':data', $data, PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
 } else {
-    $sql = "SELECT * FROM grupos ORDER BY id ASC";
+    $sql = "SELECT * FROM grupos ORDER BY $ordem_coluna $ordem_direcao LIMIT :limit OFFSET :offset";
     $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
 }
+
 $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Função para inverter direção da ordenação
+function inverterDirecao($atual) {
+    return $atual === 'ASC' ? 'DESC' : 'ASC';
+}
 
+// Função para criar URL de ordenação
+function urlOrdenacao($coluna, $ordem_atual, $direcao_atual) {
+    $nova_direcao = ($coluna === $ordem_atual) ? inverterDirecao($direcao_atual) : 'ASC';
+    $params = $_GET;
+    $params['ordem'] = $coluna;
+    $params['direcao'] = $nova_direcao;
+    return '?' . http_build_query($params);
+}
+
+// Função para criar URL de paginação
+function urlPaginacao($pagina) {
+    $params = $_GET;
+    $params['pagina'] = $pagina;
+    return '?' . http_build_query($params);
+}
+
+// Ícone para indicar a direção da ordenação
+function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
+    if ($coluna !== $ordem_atual) {
+        return '';
+    }
+    return ($direcao_atual === 'ASC') ? '↑' : '↓';
+}
 ?>
 
-<body class="">
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($titulo) ?></title>
+    <!-- Bootstrap CSS incluído no header.php -->
+    <style>
+        .table-container {
+            max-width: 90%;
+            margin: 0 auto;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .form-container {
+            max-width: 90%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .sorting-header {
+            cursor: pointer;
+        }
+        
+        .alert-container {
+            max-width: 90%;
+            margin: 10px auto;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container, .table-container, .alert-container {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mensagens de feedback -->
+    <?php if (!empty($mensagem)): ?>
+    <div class="alert-container">
+        <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($mensagem) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Formulário para cadastrar grupos -->
-    <div class=" container grupos mt-3" id="grupos" style="max-width: 80%; margin: 0 auto;">
-        <form method="POST">
-            <div class="botao">
-                <label class="form-label" style="font-size: 20px; font-weight: bold; color: white;" for="grupo">Grupo:</label>
-                <input class="form-control w-80 m-2" type="text" name="grupo" id="grupo" style="width: 80%;" required>
-                <button class="btn btn-success m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="submit">Cadastrar</button>
-                <button class="btn btn-warning m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="reset">Limpar</button>
-                <a class="btn btn-primary m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" href="index.php">Página Inicial</a>
+    <div class="form-container mt-3">
+        <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: white;">Cadastro de Grupos</h2>
+        <form method="POST" class="row g-3 align-items-end">
+            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+            
+            <div class="col-md-8">
+                <label class="form-label" style="font-weight: bold; color: white;" for="grupo">Nome do Grupo:</label>
+                <input class="form-control" type="text" name="grupo" id="grupo" required>
+            </div>
+            
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-success flex-grow-1" type="submit">Cadastrar</button>
+                <button class="btn btn-warning flex-grow-1" type="reset">Limpar</button>
+                <a class="btn btn-primary flex-grow-1" href="index.php">Início</a>
             </div>
         </form>
     </div>
 
-    <!-- formulario de pesquisa -->
+    <!-- Formulário de pesquisa -->
+    <div class="table-container mt-4">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input class="form-control" type="search" id="pesquisar" placeholder="Pesquisar..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+                    <button onclick="searchData()" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="text-white">
+                    Exibindo <?= count($grupos) ?> de <?= $total_registros ?> registros
+                </span>
+            </div>
+        </div>
 
-    <div class="box-search m-5">
-        <input class="form-control w-25" type="search" id="pesquisar" placeholder="Pesquisar ...">
-        <button onclick="searchData()" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
-            </svg></button>
+        <!-- Listagem de Grupos -->
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('id', $ordem_coluna, $ordem_direcao) ?>'">
+                            ID <?= iconeOrdenacao('id', $ordem_coluna, $ordem_direcao) ?>
+                        </th>
+                        <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>'">
+                            Nome <?= iconeOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>
+                        </th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (count($grupos) > 0): ?>
+                        <?php foreach ($grupos as $grupo): ?>
+                            <tr>
+                                <td class="text-center"><?= htmlspecialchars($grupo['id']) ?></td>
+                                <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a class="btn btn-primary btn-sm" href="editar_grupo.php?id=<?= $grupo['id'] ?>">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#confirmarExclusao" 
+                                                data-id="<?= $grupo['id'] ?>"
+                                                data-nome="<?= htmlspecialchars($grupo['nome']) ?>">
+                                            <i class="bi bi-trash"></i> Excluir
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="3" class="text-center">Nenhum grupo encontrado</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        <?php if ($total_paginas > 1): ?>
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination">
+                    <li class="page-item <?= ($pagina_atual <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="<?= urlPaginacao($pagina_atual - 1) ?>" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    
+                    <?php for ($i = max(1, $pagina_atual - 2); $i <= min($total_paginas, $pagina_atual + 2); $i++): ?>
+                        <li class="page-item <?= ($i == $pagina_atual) ? 'active' : '' ?>">
+                            <a class="page-link" href="<?= urlPaginacao($i) ?>"><?= $i ?></a>
+                        </li>
+                    <?php endfor; ?>
+                    
+                    <li class="page-item <?= ($pagina_atual >= $total_paginas) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="<?= urlPaginacao($pagina_atual + 1) ?>" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        <?php endif; ?>
     </div>
 
-
-    <!-- Listagem de Grupos -->
-    <div style="max-width: 80%; margin: 0 auto;">
-        <!-- <h2 class="text-center m-2">Grupos</h2> -->
-        <div class="overflow-y-auto" style="max-height: 450px;">
-            <table cellpadding='8' class='table table-striped' style='max-width: 80%; margin: 0 auto;'>
-                <tr>
-                    <th class="text-center">ID</th>
-                    <th class="text-center">Nome</th>
-                    <th class="text-center">Ações</th>
-                </tr>
-                <?php foreach ($grupos as $grupo): ?>
-                    <tr>
-                        <td class="text-center"><?= $grupo['id'] ?></td>
-                        <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
-                        <td class="text-center">
-                            <div class=" col-12 d-flex justify-content-between">
-                                <a class="btn btn-primary p-1 bottons col-5" href="editar_grupo.php?id=<?= $grupo['id'] ?>">Editar</a>
-                                <a class="btn btn-danger p-1  bottons col-5" href="excluir_grupo.php?id=<?= $grupo['id'] ?>"
-                                    onclick="return confirm('Tem certeza que deseja excluir este grupo e todos os seus produtos?');">Excluir</a>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </table>
+    <!-- Modal de confirmação de exclusão -->
+    <div class="modal fade" id="confirmarExclusao" tabindex="-1" aria-labelledby="confirmarExclusaoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmarExclusaoLabel">Confirmar Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza que deseja excluir o grupo <strong id="nomeGrupo"></strong>?
+                    <p class="text-danger mt-2">Esta ação também excluirá todos os produtos associados a este grupo.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="#" id="btnExcluir" class="btn btn-danger">Excluir</a>
+                </div>
+            </div>
         </div>
     </div>
 
-</body>
+    <script>
+        // Função de pesquisa com validação
+        var search = document.getElementById("pesquisar");
 
-<script>
-    var search = document.getElementById("pesquisar");
+        // Verificar tecla pressionada e chamar a função searchData() se for Enter
+        search.addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                searchData();
+            }
+        });
 
-    //verifica a tecla apertada e chama a função searchData() se for Enter
-    search.addEventListener("keyup", function(event) {
-        if (event.key === "Enter") {
-            searchData();
+        function searchData() {
+            const termo = search.value.trim();
+            window.location = 'cadastro_grupos.php?search=' + encodeURIComponent(termo);
         }
-    });
 
-    function searchData() {
-        window.location = 'cadastro_grupos.php?search=' + search.value;
-    }
-</script>
+        // Configuração do modal de confirmação
+        document.getElementById('confirmarExclusao').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const nome = button.getAttribute('data-nome');
+            
+            document.getElementById('nomeGrupo').textContent = nome;
+            document.getElementById('btnExcluir').href = 'excluir_grupo.php?id=' + id;
+        });
+
+        // Fechar alertas automaticamente após 5 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            const alertList = document.querySelectorAll('.alert');
+            alertList.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html> 

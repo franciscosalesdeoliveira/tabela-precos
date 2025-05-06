@@ -20,7 +20,6 @@ include_once 'connection.php';
 
             <a class="btn btn-primary mt-2 " color="white" target="_blank" href="configuracoes.php" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Configurações Tabela</a>
 
-            <a class="btn btn-primary mt-2 " color="white" target="_blank" href="tabela-pronta/tabela.html" style="width:100%; height: 70px; padding: 20px; color: white; text-align: center;font-size: 20px;">Tabela Pronta</a>
 
 
         </div>
