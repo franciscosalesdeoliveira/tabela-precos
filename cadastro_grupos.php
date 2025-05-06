@@ -46,8 +46,8 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <label class="form-label" style="font-size: 20px; font-weight: bold; color: white;" for="grupo">Grupo:</label>
                 <input class="form-control w-80 m-2" type="text" name="grupo" id="grupo" style="width: 80%;" required>
                 <button class="btn btn-success m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="submit">Cadastrar</button>
-                <button class="btn btn-warning m-2" color="white" target="_blank" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="reset">Limpar</button>
-                <a class="btn btn-primary m-2" color="white" target="_blank" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" href="index.php">Página Inicial</a>
+                <button class="btn btn-warning m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" type="reset">Limpar</button>
+                <a class="btn btn-primary m-2" color="white" style="width:27%; height: 40px;  color: white; ;font-size: 18px;" href="index.php">Página Inicial</a>
             </div>
         </form>
     </div>

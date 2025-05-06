@@ -40,10 +40,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
-<h2>Editar Grupo</h2>
-<form method="post">
-    <input type="hidden" name="id" value="<?= $id ?>">
-    <label>Nome:</label>
-    <input type="text" name="nome" value="<?= htmlspecialchars($grupo['nome']) ?>" required>
-    <button type="submit">Salvar</button>
-</form>
+<body>
+
+    <div>
+        <h2 class="text-center mt-5" style="font-size: 30px; font-weight: bold; color: white;">Editar Grupo</h2>
+        <form class="text-center mt-5" method="post">
+            <input type="hidden" name="id" value="<?= $id ?>">
+            <label class="form-label" style="font-size: 20px; font-weight: bold; color: white;" for="nome">Grupo:</label>
+            <input class="text-center" type="text" name="nome" value="<?= htmlspecialchars($grupo['nome']) ?>" required>
+            <button class="btn btn-primary" type="submit">Salvar</button>
+        </form>
+    </div>
+</body>

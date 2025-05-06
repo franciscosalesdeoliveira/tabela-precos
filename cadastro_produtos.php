@@ -82,7 +82,7 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="cadastro_produtos_2">
                 <h3 class="text-center">Links Úteis</h3>
                 <a href="index.php" class="btn btn-primary " ;>Página Inicial</a>
-                <a href="cadastro_grupos.php" class="btn btn-primary" target=_blank ;>Cadastro de Grupos</a>
+                <a href="cadastro_grupos.php" class="btn btn-primary" ;>Cadastro de Grupos</a>
                 <a href="configuracoes.php" class="btn btn-primary " ;>Configurações Tabela</a>
 
             </div>
@@ -102,17 +102,20 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
     <section>
-        <h2 class="text-center m-2" style="color: white;">Produtos</h2>
-        <div class="overflow-y-auto" tabela-produtos style="max-height: 450px; max-width: 90%; margin: 0 auto;">
-            <table cellpadding='8' class="table table-striped border border-black-3" style='max-width: 90%; margin: 0 auto;'>
-                <tr>
-                    <th class="text-center">ID</th>
-                    <th class="text-center">Nome</th>
-                    <th class="text-center">Descrição</th>
-                    <th class="text-center">Grupo</th>
-                    <th class="text-center">Preço</th>
-                    <th class="text-center">Ações</th>
-                </tr>
+
+        <div class="overflow-y-auto m-5" tabela-produtos style="max-height: 450px; max-width: 90%; margin: 0 auto;">
+            <table cellpadding='8' class="table sticky-top  table-striped table-bordered caption-top" style='max-width: 90%; margin: 0 auto;'>
+                <thead style="position: sticky; top: 0; background-color: #343a40; z-index: 1;">
+                    <!-- adicionar nas outras tabelas -->
+                    <tr class="table-dark">
+                        <th class="text-center">ID</th>
+                        <th class="text-center">Nome</th>
+                        <th class="text-center">Descrição</th>
+                        <th class="text-center">Grupo</th>
+                        <th class="text-center">Preço</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
                 <?php foreach ($produtos as $produto): ?>
                     <tr>
                         <td class="text-center"><?= $produto['id'] ?></td>
@@ -129,7 +132,12 @@ $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </td>
                     </tr>
                 <?php endforeach; ?>
+                <caption class="text-center mt-2" style="color: white;">
+                    <h2>Produtos</h2>
+                </caption>
+                <!-- adicionar nas outras tabelas -->
             </table>
+
         </div>
     </section>
 

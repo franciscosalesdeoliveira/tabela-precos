@@ -2,49 +2,152 @@
 $titulo = "Configurações Tabela";
 include_once 'header.php';
 include_once 'connection.php';
+
+// Recuperar valores anteriores (se existirem) para preencher os campos
+$limite = isset($_GET['limite']) ? intval($_GET['limite']) : 5;
+$tempo = isset($_GET['tempo']) ? intval($_GET['tempo']) : 10;
+$tema = isset($_GET['tema']) ? $_GET['tema'] : 'padrao';
+
+// Lista de temas disponíveis
+$temas = [
+    'padrao' => 'Padrão (Azul)',
+    'supermercado' => 'Supermercado (Verde)',
+    'padaria' => 'Padaria (Amarelo)'
+];
 ?>
-<!-- <form method="GET">
-    <label for="limite">Limite de produtos por grupos:</label>
-    <input type="number" name="limite" id="limite" min="1" value="<?= isset($_GET['limite']) ? $_GET['limite'] : 5 ?>">
-    <button type="submit">Aplicar</button>
-</form> -->
 
-<label for="colorPicker">Escolha uma cor:</label>
-<input type="color" id="colorPicker" value="#3498db">
+<div class="container mt-5">
+    <h2 class="mb-4 text-center" style="color: white;">Configurações da Tabela de Preços</h2>
 
-<div class="container mt-4">
-    <form class="row g-3 justify-content-center" onsubmit="redirecionarTabela(event)">
-        <div class="col-auto">
-            <label for="limite" class="col-form-label">Quantidade de itens por grupo:</label>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <!-- Formulário Unificado -->
+                    <form id="formConfiguracoes" action="tabela_precos.php" method="GET">
+                        <!-- Limite de Itens -->
+                        <div class="mb-3">
+                            <label for="limite" class="form-label fw-bold">Quantidade de itens por grupo:</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="limite" name="limite"
+                                    min="1" value="<?php echo $limite; ?>" placeholder="Ex: 10" required>
+                                <span class="input-group-text">itens</span>
+                            </div>
+                            <div class="form-text">Defina quantos itens serão exibidos em cada grupo.</div>
+                        </div>
+
+                        <!-- Tempo por Slide -->
+                        <div class="mb-3">
+                            <label for="tempo" class="form-label fw-bold">Tempo por slide (segundos):</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="tempo" name="tempo"
+                                    min="1" value="<?php echo $tempo; ?>" placeholder="Ex: 60" required>
+                                <span class="input-group-text">segundos</span>
+                            </div>
+                            <div class="form-text">Defina o tempo em segundos que cada slide ficará visível.</div>
+                        </div>
+
+                        <!-- Seleção de Tema -->
+                        <div class="mb-4">
+                            <label for="tema" class="form-label fw-bold">Tema visual:</label>
+                            <select class="form-select" id="tema" name="tema">
+                                <?php foreach ($temas as $valor => $nome): ?>
+                                    <option value="<?= $valor ?>" <?= ($tema == $valor) ? 'selected' : '' ?>>
+                                        <?= $nome ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">Escolha o estilo visual para a tabela de preços.</div>
+                        </div>
+
+                        <!-- Botão de Visualização -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-eye"></i> Visualizar Tabela
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Visão Prévia dos Temas -->
+                    <div class="mt-4">
+                        <h5 class="border-bottom pb-2">Pré-visualização dos temas</h5>
+                        <div class="row mt-3">
+                            <?php foreach ($temas as $valor => $nome):
+                                // Define as cores do tema para a prévia
+                                $corFundo = $valor == 'padrao' ? 'bg-primary' : ($valor == 'supermercado' ? 'bg-success' : 'bg-warning');
+                                $corTexto = $valor == 'padaria' ? 'text-dark' : 'text-white';
+                            ?>
+                                <div class="col-md-4 mb-2">
+                                    <div class="card border">
+                                        <div class="card-header <?= $corFundo ?> <?= $corTexto ?> text-center">
+                                            <?= $nome ?>
+                                        </div>
+                                        <div class="card-body p-2 text-center" style="font-size: 0.8rem;">
+                                            <span class="badge <?= $corFundo ?> <?= $corTexto ?> d-block mb-1">Amostra</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Botões adicionais -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="index.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-house"></i> Página Inicial
+                        </a>
+                        <a href="tabela_precos.php" class="btn btn-outline-info">
+                            <i class="bi bi-table"></i> Tabela Padrão
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-auto">
-            <input type="number" class="form-control" id="limite" name="limite">
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary mb-3">Ver Tabela</button>
-        </div>
-    </form>
+    </div>
 </div>
 
 <script>
-    function redirecionarTabela(event) {
-        event.preventDefault();
-        const limite = document.getElementById('limite').value;
-        if (limite) {
-            window.location.href = `tabela_precos.php?limite=${limite}`;
-        } else {
-            window.location.href = 'tabela_precos.php';
-        }
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validação do formulário
+        document.getElementById('formConfiguracoes').addEventListener('submit', function(event) {
+            const limite = document.getElementById('limite').value;
+            const tempo = document.getElementById('tempo').value;
 
-    // Adiciona um evento de mudança ao seletor de cores
-    // document.addEventListener('DOMContentLoaded', () => {
-    //     const colorInput = document.getElementById('colorPicker');
+            if (!limite || parseInt(limite) <= 0) {
+                event.preventDefault();
+                alert('Por favor, insira um número válido de itens maior que zero.');
+                document.getElementById('limite').focus();
+                return false;
+            }
 
-    //     colorInput.addEventListener('input', function() {
-    //         const color = this.value;
-    //         // Altera diretamente a cor do body, pois variáveis CSS não afetam propriedades diretamente já definidas em outros seletores
-    //         document.body.style.backgroundColor = color;
-    //     });
-    // });
+            if (!tempo || parseInt(tempo) <= 0) {
+                event.preventDefault();
+                alert('Por favor, insira um tempo válido em segundos maior que zero.');
+                document.getElementById('tempo').focus();
+                return false;
+            }
+
+            // Se tudo estiver correto, o formulário será enviado normalmente
+            return true;
+        });
+
+        // Visualização rápida do tema selecionado
+        document.getElementById('tema').addEventListener('change', function() {
+            const temaAtual = this.value;
+            const exemplos = document.querySelectorAll('.card-header');
+
+            exemplos.forEach(function(exemplo) {
+                exemplo.classList.remove('bg-primary', 'bg-success', 'bg-warning', 'text-white', 'text-dark');
+
+                if (temaAtual === 'padrao') {
+                    exemplo.classList.add('bg-primary', 'text-white');
+                } else if (temaAtual === 'supermercado') {
+                    exemplo.classList.add('bg-success', 'text-white');
+                } else if (temaAtual === 'padaria') {
+                    exemplo.classList.add('bg-warning', 'text-dark');
+                }
+
+            });
+        });
+    });
 </script>
