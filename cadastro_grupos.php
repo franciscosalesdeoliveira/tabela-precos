@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Validação de entrada
         $grupo = trim($_POST['grupo']);
-        
+
         if (empty($grupo)) {
             $mensagem = "O nome do grupo não pode estar vazio.";
             $tipo_mensagem = "danger";
@@ -32,12 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare($sql);
                 $stmt->bindValue(':grupo', $grupo);
                 $stmt->execute();
-                
+
                 // Gerar nova mensagem e token após submissão bem-sucedida
                 $mensagem = "Grupo cadastrado com sucesso!";
                 $tipo_mensagem = "success";
                 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                
+
                 // Redirecionamento opcional (comentado para mostrar a mensagem)
                 // header("Location: " . $_SERVER['PHP_SELF'] . "?success=1");
                 // exit;
@@ -84,7 +84,7 @@ if (!empty($_GET['search'])) {
             OR CAST(id AS TEXT) ILIKE :data
             ORDER BY $ordem_coluna $ordem_direcao
             LIMIT :limit OFFSET :offset";
-    
+
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':data', $data, PDO::PARAM_STR);
     $stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
@@ -101,12 +101,14 @@ if (!empty($_GET['search'])) {
 $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Função para inverter direção da ordenação
-function inverterDirecao($atual) {
+function inverterDirecao($atual)
+{
     return $atual === 'ASC' ? 'DESC' : 'ASC';
 }
 
 // Função para criar URL de ordenação
-function urlOrdenacao($coluna, $ordem_atual, $direcao_atual) {
+function urlOrdenacao($coluna, $ordem_atual, $direcao_atual)
+{
     $nova_direcao = ($coluna === $ordem_atual) ? inverterDirecao($direcao_atual) : 'ASC';
     $params = $_GET;
     $params['ordem'] = $coluna;
@@ -115,14 +117,16 @@ function urlOrdenacao($coluna, $ordem_atual, $direcao_atual) {
 }
 
 // Função para criar URL de paginação
-function urlPaginacao($pagina) {
+function urlPaginacao($pagina)
+{
     $params = $_GET;
     $params['pagina'] = $pagina;
     return '?' . http_build_query($params);
 }
 
 // Ícone para indicar a direção da ordenação
-function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
+function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
+{
     if ($coluna !== $ordem_atual) {
         return '';
     }
@@ -132,6 +136,7 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
 
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -142,11 +147,11 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
             max-width: 90%;
             margin: 0 auto;
         }
-        
+
         .table-responsive {
             overflow-x: auto;
         }
-        
+
         .form-container {
             max-width: 90%;
             margin: 0 auto;
@@ -154,38 +159,42 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
             background-color: rgba(0, 0, 0, 0.1);
             border-radius: 8px;
         }
-        
+
         .pagination {
             justify-content: center;
             margin-top: 20px;
         }
-        
+
         .sorting-header {
             cursor: pointer;
         }
-        
+
         .alert-container {
             max-width: 90%;
             margin: 10px auto;
         }
-        
+
         @media (max-width: 768px) {
-            .form-container, .table-container, .alert-container {
+
+            .form-container,
+            .table-container,
+            .alert-container {
                 max-width: 95%;
             }
         }
     </style>
 </head>
+
 <body>
 
     <!-- Mensagens de feedback -->
     <?php if (!empty($mensagem)): ?>
-    <div class="alert-container">
-        <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars($mensagem) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        <div class="alert-container">
+            <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
+                <?= htmlspecialchars($mensagem) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
         </div>
-    </div>
     <?php endif; ?>
 
     <!-- Formulário para cadastrar grupos -->
@@ -193,12 +202,12 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
         <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: white;">Cadastro de Grupos</h2>
         <form method="POST" class="row g-3 align-items-end">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            
+
             <div class="col-md-8">
                 <label class="form-label" style="font-weight: bold; color: white;" for="grupo">Nome do Grupo:</label>
                 <input class="form-control" type="text" name="grupo" id="grupo" required>
             </div>
-            
+
             <div class="col-md-4 d-flex gap-2">
                 <button class="btn btn-success flex-grow-1" type="submit">Cadastrar</button>
                 <button class="btn btn-warning flex-grow-1" type="reset">Limpar</button>
@@ -215,7 +224,7 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
                     <input class="form-control" type="search" id="pesquisar" placeholder="Pesquisar..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
                     <button onclick="searchData()" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                         </svg>
                     </button>
                 </div>
@@ -249,14 +258,14 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
                                 <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <a class="btn btn-primary btn-sm" href="editar_grupo.php?id=<?= $grupo['id'] ?>">
+                                        <a class="btn btn-primary btn-sm " href="editar_grupo.php?id=<?= $grupo['id'] ?>">
                                             <i class="bi bi-pencil"></i> Editar
                                         </a>
-                                        <button type="button" class="btn btn-danger btn-sm" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#confirmarExclusao" 
-                                                data-id="<?= $grupo['id'] ?>"
-                                                data-nome="<?= htmlspecialchars($grupo['nome']) ?>">
+                                        <button type="button" class="btn btn-danger btn-sm "
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#confirmarExclusao"
+                                            data-id="<?= $grupo['id'] ?>"
+                                            data-nome="<?= htmlspecialchars($grupo['nome']) ?>">
                                             <i class="bi bi-trash"></i> Excluir
                                         </button>
                                     </div>
@@ -281,13 +290,13 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
-                    
+
                     <?php for ($i = max(1, $pagina_atual - 2); $i <= min($total_paginas, $pagina_atual + 2); $i++): ?>
                         <li class="page-item <?= ($i == $pagina_atual) ? 'active' : '' ?>">
                             <a class="page-link" href="<?= urlPaginacao($i) ?>"><?= $i ?></a>
                         </li>
                     <?php endfor; ?>
-                    
+
                     <li class="page-item <?= ($pagina_atual >= $total_paginas) ? 'disabled' : '' ?>">
                         <a class="page-link" href="<?= urlPaginacao($pagina_atual + 1) ?>" aria-label="Próximo">
                             <span aria-hidden="true">&raquo;</span>
@@ -335,11 +344,11 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
         }
 
         // Configuração do modal de confirmação
-        document.getElementById('confirmarExclusao').addEventListener('show.bs.modal', function (event) {
+        document.getElementById('confirmarExclusao').addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             const id = button.getAttribute('data-id');
             const nome = button.getAttribute('data-nome');
-            
+
             document.getElementById('nomeGrupo').textContent = nome;
             document.getElementById('btnExcluir').href = 'excluir_grupo.php?id=' + id;
         });
@@ -356,4 +365,5 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual) {
         });
     </script>
 </body>
-</html> 
+
+</html>

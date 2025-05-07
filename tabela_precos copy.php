@@ -209,13 +209,13 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
                FROM produtos p
                JOIN grupos g ON p.grupo_id = g.id";
-            }
-            $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
+            } else {
+                $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
                       p.id as produto_id, g.id as grupo_id" .
-                ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
+                    ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
                FROM produtos p
                JOIN grupos g ON p.grupo_id = g.id";
-
+            }
 
             // Adicionar filtro de grupo se não for "todos"
             if ($grupoSelecionado !== 'todos') {
@@ -234,8 +234,9 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             $stmt->execute();
             $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if (!empty($produtos)) {
-
+            if (empty($produtos)) {
+                echo '<div class="alert alert-warning m-5">Nenhum produto disponível para exibição.</div>';
+            } else {
                 $grupos = [];
                 foreach ($produtos as $produto) {
                     $grupos[$produto['grupo']][] = $produto;
@@ -268,11 +269,12 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     echo '</div>';
 
                     // Container da tabela
-                    if ($modoExibicao != 'grande') {
-                        echo '<div class="table-container mx-auto" style="max-width: 100%;">';
+                    if ($modoExibicao == 'grande') {
+                        echo '<div id="tabela-container-' . $index . '" class="tabela-container tabela-grande">';
+                        echo '<div id="tabela-scroll-' . $index . '" class="tabela-scroll" data-total-produtos="' . $numProdutos . '" data-tempo-rolagem="' . $tempoBaseRolagem . '">';
+                    } else {
+                        echo '<div class="table-container mx-auto" style="max-width: 90%;">';
                     }
-                    echo '<div id="tabela-container-' . $index . '" class="tabela-container tabela-grande">';
-                    echo '<div id="tabela-scroll-' . $index . '" class="tabela-scroll" data-total-produtos="' . $numProdutos . '" data-tempo-rolagem="' . $tempoBaseRolagem . '">';
 
                     // Tabela de produtos
                     echo '<table class="table table-striped table-hover border">';
@@ -305,10 +307,11 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     echo '</table>';
 
                     // Fechar containers
-                    if ($modoExibicao != 'grande') {
-                        echo '</div>'; // fecha table-container                        
+                    if ($modoExibicao == 'grande') {
+                        echo '</div></div>'; // fecha tabela-scroll e tabela-container
+                    } else {
+                        echo '</div>'; // fecha table-container
                     }
-                    echo '</div></div>'; // fecha tabela-scroll e tabela-container
 
                     if ($mostrarCarrossel) {
                         echo '</div>'; // fecha carousel-item
@@ -323,23 +326,22 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     echo '</div>'; // fecha grupoCarousel
                 }
             }
-            echo '<div class="alert alert-warning m-5">Nenhum produto disponível para exibição.</div>';
-
 
             $stmt = null;
             $pdo = null;
         } catch (PDOException $e) {
-            $isDev = false;
+            $isDev = true;
             if ($isDev) {
+                echo '<div class="alert alert-danger m-4">
+                    <h4>Erro ao carregar a tabela de preços:</h4>
+                    <p>' . htmlspecialchars($e->getMessage()) . '</p>
+                    <p>Arquivo: ' . htmlspecialchars($e->getFile()) . ' (linha ' . $e->getLine() . ')</p>
+                </div>';
+            } else {
                 echo '<div class="alert alert-danger m-4">
                     Ocorreu um erro ao carregar a tabela de preços. Por favor, tente novamente mais tarde.
                 </div>';
             }
-            echo '<div class="alert alert-danger m-4">
-                <h4>Erro ao carregar a tabela de preços:</h4>
-                <p>' . htmlspecialchars($e->getMessage()) . '</p>
-                <p>Arquivo: ' . htmlspecialchars($e->getFile()) . ' (linha ' . $e->getLine() . ')</p>
-            </div>';
         }
         ?>
     </div>

@@ -35,30 +35,18 @@ body {
     background-attachment: fixed;
 }
 
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
 main .container a:hover {
     background-color: rgba(23, 51, 207, 0.6);
     font-weight: bold;
 }
 
-#paginainicial {
-    display: grid;
-    justify-content: center;
-    height: 100vh;
-    gap: 20px;
-    padding: 30px;
-}
 
-#paginainicial h1 {
-    color: #ffffff;
-    font-size: 50px;
-    text-align: center;
-}
 
-#paginainicial p {
-    color: #ffffff;
-    font-size: 20px;
-    text-align: center;
-}
 
 /* Tela de Grupos */
 

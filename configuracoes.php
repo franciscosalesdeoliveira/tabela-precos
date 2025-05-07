@@ -8,12 +8,24 @@ $limite = isset($_GET['limite']) ? intval($_GET['limite']) : 5;
 $tempo = isset($_GET['tempo']) ? intval($_GET['tempo']) : 10;
 $tema = isset($_GET['tema']) ? $_GET['tema'] : 'padrao';
 $grupo_selecionado = isset($_GET['grupo']) ? $_GET['grupo'] : 'todos';
+$atualizacao_auto = isset($_GET['atualizacao_auto']) ? intval($_GET['atualizacao_auto']) : 10; // Valor padrão: 10 minutos
 
 // Lista de temas disponíveis
 $temas = [
     'padrao' => 'Padrão (Azul)',
     'supermercado' => 'Supermercado (Verde)',
     'padaria' => 'Padaria (Amarelo)'
+];
+
+// Opções de tempo de atualização automática (em minutos)
+$opcoes_atualizacao = [
+    1 => '1 minuto',
+    5 => '5 minutos',
+    10 => '10 minutos',
+    15 => '15 minutos',
+    30 => '30 minutos',
+    60 => '1 hora',
+    0 => 'Desativar'
 ];
 
 // Buscar grupos disponíveis no banco de dados
@@ -70,6 +82,19 @@ try {
                                 <span class="input-group-text">segundos</span>
                             </div>
                             <div class="form-text">Defina o tempo em segundos que cada slide ficará visível.</div>
+                        </div>
+
+                        <!-- Tempo de Atualização Automática -->
+                        <div class="mb-3">
+                            <label for="atualizacao_auto" class="form-label fw-bold">Atualização automática:</label>
+                            <select class="form-select" id="atualizacao_auto" name="atualizacao_auto">
+                                <?php foreach ($opcoes_atualizacao as $valor => $texto): ?>
+                                    <option value="<?= $valor ?>" <?= ($atualizacao_auto == $valor) ? 'selected' : '' ?>>
+                                        <?= $texto ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">Defina com que frequência a tabela será atualizada automaticamente.</div>
                         </div>
 
                         <!-- Seleção de Tema -->
