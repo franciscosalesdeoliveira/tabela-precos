@@ -1,7 +1,8 @@
 <?php
 $titulo = "Gerenciar Propagandas";
-include_once 'header.php';
 include_once 'connection.php';
+include_once 'header.php';
+
 
 // Verificar se existe pasta de uploads e criar se não existir
 $uploadDir = 'uploads/propagandas/';
@@ -16,16 +17,16 @@ if (isset($_GET['excluir']) && is_numeric($_GET['excluir'])) {
         $stmt = $pdo->prepare("SELECT imagem FROM propagandas WHERE id = ?");
         $stmt->execute([$_GET['excluir']]);
         $imagem = $stmt->fetchColumn();
-        
+
         // Excluir registro do banco
         $stmt = $pdo->prepare("DELETE FROM propagandas WHERE id = ?");
         $stmt->execute([$_GET['excluir']]);
-        
+
         // Remover arquivo se existir
         if ($imagem && file_exists($uploadDir . $imagem)) {
             unlink($uploadDir . $imagem);
         }
-        
+
         $mensagem = "Propaganda excluída com sucesso!";
         $tipoMensagem = "success";
     } catch (PDOException $e) {
@@ -41,14 +42,14 @@ if (isset($_GET['alterarstatus']) && is_numeric($_GET['alterarstatus'])) {
         $stmt = $pdo->prepare("SELECT ativo FROM propagandas WHERE id = ?");
         $stmt->execute([$_GET['alterarstatus']]);
         $statusAtual = $stmt->fetchColumn();
-        
+
         // Inverter status
         $novoStatus = $statusAtual ? 0 : 1;
-        
+
         // Atualizar no banco
         $stmt = $pdo->prepare("UPDATE propagandas SET ativo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([$novoStatus, $_GET['alterarstatus']]);
-        
+
         $mensagem = "Status da propaganda atualizado com sucesso!";
         $tipoMensagem = "success";
     } catch (PDOException $e) {
@@ -64,10 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ordem = isset($_POST['ordem']) ? intval($_POST['ordem']) : 0;
     $ativo = isset($_POST['ativo']) ? 1 : 0;
     $id = isset($_POST['id']) ? intval($_POST['id']) : null;
-    
+
     // Flag para controlar se há upload de arquivo
     $temArquivo = isset($_FILES['imagem']) && $_FILES['imagem']['error'] !== UPLOAD_ERR_NO_FILE;
-    
+
     try {
         // Processar o upload da imagem se houver
         $nomeArquivo = null;
@@ -75,20 +76,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Verificar extensão
             $extensao = strtolower(pathinfo($_FILES['imagem']['name'], PATHINFO_EXTENSION));
             $extensoesPermitidas = ['jpg', 'jpeg', 'png', 'gif'];
-            
+
             if (!in_array($extensao, $extensoesPermitidas)) {
                 throw new Exception("Formato de arquivo não permitido. Use: " . implode(', ', $extensoesPermitidas));
             }
-            
+
             // Gerar nome único para o arquivo
             $nomeArquivo = 'propaganda_' . time() . '_' . uniqid() . '.' . $extensao;
-            
+
             // Mover o arquivo para a pasta de uploads
             if (!move_uploaded_file($_FILES['imagem']['tmp_name'], $uploadDir . $nomeArquivo)) {
                 throw new Exception("Falha ao salvar o arquivo. Verifique as permissões da pasta.");
             }
         }
-        
+
         // Decidir entre update ou insert
         if ($id) {
             // Se for edição
@@ -97,13 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("SELECT imagem FROM propagandas WHERE id = ?");
                 $stmt->execute([$id]);
                 $imagemAntiga = $stmt->fetchColumn();
-                
+
                 // Atualizar com nova imagem
                 $stmt = $pdo->prepare("UPDATE propagandas SET 
                     titulo = ?, descricao = ?, imagem = ?, ativo = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE id = ?");
                 $stmt->execute([$titulo, $descricao, $nomeArquivo, $ativo, $ordem, $id]);
-                
+
                 // Remover imagem antiga
                 if ($imagemAntiga && file_exists($uploadDir . $imagemAntiga)) {
                     unlink($uploadDir . $imagemAntiga);
@@ -115,26 +116,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE id = ?");
                 $stmt->execute([$titulo, $descricao, $ativo, $ordem, $id]);
             }
-            
+
             $mensagem = "Propaganda atualizada com sucesso!";
         } else {
             // Se for nova propaganda
             if (!$temArquivo) {
                 throw new Exception("É necessário enviar uma imagem para a propaganda.");
             }
-            
+
             $stmt = $pdo->prepare("INSERT INTO propagandas (titulo, descricao, imagem, ativo, ordem) 
                 VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$titulo, $descricao, $nomeArquivo, $ativo, $ordem]);
-            
+
             $mensagem = "Nova propaganda cadastrada com sucesso!";
         }
-        
+
         $tipoMensagem = "success";
     } catch (Exception $e) {
         $mensagem = "Erro: " . $e->getMessage();
         $tipoMensagem = "danger";
-        
+
         // Remover arquivo enviado em caso de erro no banco
         if (isset($nomeArquivo) && file_exists($uploadDir . $nomeArquivo)) {
             unlink($uploadDir . $nomeArquivo);
@@ -168,14 +169,14 @@ try {
 
 <div class="container mt-4">
     <h1 class="text-center mb-4" style="color: white;"><?= $titulo ?></h1>
-    
+
     <?php if (isset($mensagem)): ?>
         <div class="alert alert-<?= $tipoMensagem ?> alert-dismissible fade show">
             <?= $mensagem ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
-    
+
     <!-- Formulário de cadastro/edição -->
     <div class="card mb-4 shadow">
         <div class="card-header bg-primary text-white">
@@ -186,22 +187,22 @@ try {
                 <?php if ($propagandaEdicao): ?>
                     <input type="hidden" name="id" value="<?= $propagandaEdicao['id'] ?>">
                 <?php endif; ?>
-                
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="titulo" class="form-label">Título da Propaganda</label>
-                        <input type="text" class="form-control" id="titulo" name="titulo" 
-                            value="<?= $propagandaEdicao ? htmlspecialchars($propagandaEdicao['titulo']) : '' ?>" 
+                        <input type="text" class="form-control" id="titulo" name="titulo"
+                            value="<?= $propagandaEdicao ? htmlspecialchars($propagandaEdicao['titulo']) : '' ?>"
                             required>
                     </div>
-                    
+
                     <div class="col-md-3 mb-3">
                         <label for="ordem" class="form-label">Ordem de Exibição</label>
-                        <input type="number" class="form-control" id="ordem" name="ordem" 
-                            value="<?= $propagandaEdicao ? $propagandaEdicao['ordem'] : '0' ?>" 
+                        <input type="number" class="form-control" id="ordem" name="ordem"
+                            value="<?= $propagandaEdicao ? $propagandaEdicao['ordem'] : '0' ?>"
                             min="0">
                     </div>
-                    
+
                     <div class="col-md-3 mb-3">
                         <label class="form-label d-block">Status</label>
                         <div class="form-check form-switch mt-2">
@@ -211,12 +212,12 @@ try {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="descricao" class="form-label">Descrição</label>
                     <textarea class="form-control" id="descricao" name="descricao" rows="2"><?= $propagandaEdicao ? htmlspecialchars($propagandaEdicao['descricao']) : '' ?></textarea>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="imagem" class="form-label">
                         <?= $propagandaEdicao ? 'Alterar Imagem (opcional)' : 'Imagem da Propaganda' ?>
@@ -225,20 +226,20 @@ try {
                         <?= $propagandaEdicao ? '' : 'required' ?>>
                     <div class="form-text">Formatos suportados: JPG, PNG, GIF.</div>
                 </div>
-                
+
                 <?php if ($propagandaEdicao && $propagandaEdicao['imagem']): ?>
                     <div class="mb-3">
                         <label class="form-label">Imagem Atual</label>
                         <div class="border p-2 rounded">
-                            <img src="<?= $uploadDir . htmlspecialchars($propagandaEdicao['imagem']) ?>" 
+                            <img src="<?= $uploadDir . htmlspecialchars($propagandaEdicao['imagem']) ?>"
                                 class="img-thumbnail" style="max-height: 150px;">
                         </div>
                     </div>
                 <?php endif; ?>
-                
+
                 <div class="mt-4">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> 
+                        <i class="bi bi-save"></i>
                         <?= $propagandaEdicao ? 'Atualizar Propaganda' : 'Salvar Nova Propaganda' ?>
                     </button>
                     <?php if ($propagandaEdicao): ?>
@@ -248,7 +249,7 @@ try {
             </form>
         </div>
     </div>
-    
+
     <!-- Lista de propagandas -->
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
@@ -277,7 +278,7 @@ try {
                                     <td class="text-center"><?= $propaganda['ordem'] ?></td>
                                     <td>
                                         <?php if ($propaganda['imagem'] && file_exists($uploadDir . $propaganda['imagem'])): ?>
-                                            <img src="<?= $uploadDir . htmlspecialchars($propaganda['imagem']) ?>" 
+                                            <img src="<?= $uploadDir . htmlspecialchars($propaganda['imagem']) ?>"
                                                 class="img-thumbnail" style="max-height: 60px;">
                                         <?php else: ?>
                                             <span class="badge bg-danger">Sem imagem</span>
@@ -304,8 +305,8 @@ try {
                                             <a href="?editar=<?= $propaganda['id'] ?>" class="btn btn-outline-primary" title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <a href="?excluir=<?= $propaganda['id'] ?>" class="btn btn-outline-danger" 
-                                               onclick="return confirm('Tem certeza que deseja excluir esta propaganda?')" title="Excluir">
+                                            <a href="?excluir=<?= $propaganda['id'] ?>" class="btn btn-outline-danger"
+                                                onclick="return confirm('Tem certeza que deseja excluir esta propaganda?')" title="Excluir">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </div>
@@ -318,7 +319,7 @@ try {
             <?php endif; ?>
         </div>
     </div>
-    
+
     <div class="mt-4 mb-5 text-center">
         <a href="index.php" class="btn btn-outline-secondary">
             <i class="bi bi-house"></i> Voltar para Início

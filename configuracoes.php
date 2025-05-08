@@ -1,7 +1,8 @@
 <?php
 $titulo = "Configurações Tabela";
-include_once 'header.php';
 include_once 'connection.php';
+include_once 'header.php';
+
 
 // Recuperar valores anteriores (se existirem) para preencher os campos
 $limite = isset($_GET['limite']) ? intval($_GET['limite']) : 5;
@@ -9,6 +10,12 @@ $tempo = isset($_GET['tempo']) ? intval($_GET['tempo']) : 10;
 $tema = isset($_GET['tema']) ? $_GET['tema'] : 'padrao';
 $grupo_selecionado = isset($_GET['grupo']) ? $_GET['grupo'] : 'todos';
 $atualizacao_auto = isset($_GET['atualizacao_auto']) ? intval($_GET['atualizacao_auto']) : 10; // Valor padrão: 10 minutos
+
+// Novos parâmetros para propagandas
+// Importante: Mudamos para verificar se o parâmetro existe em $_GET, não apenas o valor
+// $propagandas_ativas = 1; // Sempre ativado por padrão
+$propagandas_ativas = isset($_GET['propagandas_ativas']) && $_GET['propagandas_ativas'] == '1' ? 1 : 0;
+$tempo_propagandas = isset($_GET['tempo_propagandas']) ? intval($_GET['tempo_propagandas']) : 5; // Tempo em segundos
 
 // Lista de temas disponíveis
 $temas = [
@@ -84,6 +91,26 @@ try {
                             <div class="form-text">Defina o tempo em segundos que cada slide ficará visível.</div>
                         </div>
 
+                        <!-- Controle de Propagandas-->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Exibição de Propagandas:</label>
+                            <!-- Importante: Alteramos para usar um campo oculto que sempre será enviado -->
+                            <input type="hidden" name="propagandas_ativas" value="0">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="propagandas_ativas" name="propagandas_ativas" value="1"
+                                    <?= $propagandas_ativas ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="propagandas_ativas">Ativar exibição de propagandas</label>
+                            </div>
+                            <div class="input-group mt-2">
+                                <label for="tempo_propagandas" class="form-label">Tempo de exibição (segundos):</label>
+                                <input type="number" class="form-control" id="tempo_propagandas" name="tempo_propagandas"
+                                    min="1" value="<?php echo $tempo_propagandas; ?>" placeholder="Ex: 5"
+                                    <?= $propagandas_ativas ? '' : 'disabled' ?>>
+                                <span class="input-group-text">segundos</span>
+                            </div>
+                            <div class="form-text">Defina se as propagandas serão exibidas e por quanto tempo.</div>
+                        </div>
+
                         <!-- Tempo de Atualização Automática -->
                         <div class="mb-3">
                             <label for="atualizacao_auto" class="form-label fw-bold">Atualização automática:</label>
@@ -146,8 +173,8 @@ try {
                         <a href="index.php" class="btn btn-outline-secondary">
                             <i class="bi bi-house"></i> Página Inicial
                         </a>
-                        <a href="tabela_precos.php" class="btn btn-outline-info">
-                            <i class="bi bi-table"></i> Tabela Padrão
+                        <a href="propagandas.php" class="btn btn-outline-success">
+                            <i class="bi bi-image"></i> Gerenciar Propagandas
                         </a>
                     </div>
                 </div>
@@ -162,6 +189,8 @@ try {
         document.getElementById('formConfiguracoes').addEventListener('submit', function(event) {
             const limite = document.getElementById('limite').value;
             const tempo = document.getElementById('tempo').value;
+            const propagandasAtivas = document.getElementById('propagandas_ativas').checked;
+            const tempoPropagandas = document.getElementById('tempo_propagandas').value;
 
             if (!limite || parseInt(limite) <= 0) {
                 event.preventDefault();
@@ -177,8 +206,20 @@ try {
                 return false;
             }
 
+            if (propagandasAtivas && (!tempoPropagandas || parseInt(tempoPropagandas) <= 0)) {
+                event.preventDefault();
+                alert('Por favor, insira um tempo válido para as propagandas em segundos maior que zero.');
+                document.getElementById('tempo_propagandas').focus();
+                return false;
+            }
+
             // Se tudo estiver correto, o formulário será enviado normalmente
             return true;
+        });
+
+        // Habilitar/desabilitar campo de tempo de propagandas
+        document.getElementById('propagandas_ativas').addEventListener('change', function() {
+            document.getElementById('tempo_propagandas').disabled = !this.checked;
         });
 
         // Visualização rápida do tema selecionado
@@ -195,8 +236,9 @@ try {
                     exemplo.classList.add('bg-success', 'text-white');
                 } else if (temaAtual === 'padaria') {
                     exemplo.classList.add('bg-warning', 'text-dark');
+                } else if (temaAtual === 'informatica') {
+                    exemplo.classList.add('bg-secondary', 'text-white');
                 }
-
             });
         });
     });

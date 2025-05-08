@@ -28,11 +28,19 @@ body .links:hover {
 }
 
 body {
+    background-color: rgb(174, 158, 158);
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+
+    width: 100%;
+
+    /*
     background-color: #000000;
     background-image: url("fundo.jpg");
     background-size: cover;
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    background-attachment: fixed; */
+
 }
 
 ul {
@@ -55,11 +63,13 @@ main .container a:hover {
     margin: 0 auto;
 }
 
-.grupo h3 {
+.grupo h1, h3, p {
     text-align: center;
-    margin: 20x;
-    color: white;
+    margin: 20px;
+    color: black;
 }
+
+
 
 .container .botao {
     display: flex;

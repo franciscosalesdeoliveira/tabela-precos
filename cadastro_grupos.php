@@ -199,12 +199,12 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
 
     <!-- Formulário para cadastrar grupos -->
     <div class="form-container mt-3">
-        <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: white;">Cadastro de Grupos</h2>
+        <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: black;">Cadastro de Grupos</h2>
         <form method="POST" class="row g-3 align-items-end">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
             <div class="col-md-8">
-                <label class="form-label" style="font-weight: bold; color: white;" for="grupo">Nome do Grupo:</label>
+                <label class="form-label" style="font-weight: bold; color: back;" for="grupo">Nome do Grupo:</label>
                 <input class="form-control" type="text" name="grupo" id="grupo" required>
             </div>
 
@@ -230,7 +230,7 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                 </div>
             </div>
             <div class="col-md-6 text-end">
-                <span class="text-white">
+                <span class="text-black">
                     Exibindo <?= count($grupos) ?> de <?= $total_registros ?> registros
                 </span>
             </div>

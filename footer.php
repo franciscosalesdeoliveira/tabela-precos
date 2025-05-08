@@ -1,0 +1,1 @@
+<p class="text-center">Desenvolvido por TadsBr Todos os direitos reservados</p>

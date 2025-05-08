@@ -6,6 +6,7 @@ require_once 'connection.php';
 // Verificar se é uma atualização via AJAX
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
+
 // Configurações da tabela
 $limiteGrupo = isset($_GET['limite']) && is_numeric($_GET['limite']) ? (int)$_GET['limite'] : 5;
 $tempoSlide = isset($_GET['tempo']) && is_numeric($_GET['tempo']) ? (int)$_GET['tempo'] * 1000 : 5000;
@@ -13,8 +14,19 @@ $tempoExtraPorProduto = 500; // Adiciona 0.5s por produto
 $tempoRolagem = isset($_GET['rolagem']) && is_numeric($_GET['rolagem']) ? (int)$_GET['rolagem'] : 20; // Tempo de rolagem em segundos
 $grupoSelecionado = isset($_GET['grupo']) ? $_GET['grupo'] : 'todos';
 
+// Tempo de propaganda - AJUSTADO
+$tempo_propagandas = isset($_GET['tempo_propagandas']) && is_numeric($_GET['tempo_propagandas'])
+    ? (int)$_GET['tempo_propagandas'] * 1000
+    : 5000; // Converte para milissegundos
+
 // Configuração de atualização automática (em minutos)
 $atualizacao_auto = isset($_GET['atualizacao_auto']) && is_numeric($_GET['atualizacao_auto']) ? (int)$_GET['atualizacao_auto'] : 10;
+
+// Configurações de propagandas
+$propagandas_ativas = isset($_GET['propagandas_ativas']) ? (int)$_GET['propagandas_ativas'] : 1;
+if ($propagandas_ativas !== 0) { // Considera qualquer valor diferente de 0 como ativo
+    $propagandas_ativas = 1;
+}
 
 // Definir estilo de tema (pode vir do banco de dados ou configurações)
 $tema = isset($_GET['tema']) ? $_GET['tema'] : 'padrao';
@@ -171,6 +183,36 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             .tabela-grande td {
                 padding: 8px 15px;
             }
+
+            /* Estilos para as propagandas */
+            .propaganda-item {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 80vh;
+                padding: 20px;
+                text-align: center;
+            }
+
+            .propaganda-imagem {
+                max-width: 100%;
+                max-height: 70vh;
+                border-radius: 10px;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            }
+
+            .propaganda-titulo {
+                position: absolute;
+                bottom: 15%;
+                left: 0;
+                right: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 15px;
+                margin: 0 auto;
+                max-width: 80%;
+                border-radius: 8px;
+            }
         </style>
     <?php endif; ?>
 </head>
@@ -209,13 +251,13 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
                FROM produtos p
                JOIN grupos g ON p.grupo_id = g.id";
-            }
-            $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
+            } else {
+                $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
                       p.id as produto_id, g.id as grupo_id" .
-                ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
+                    ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
                FROM produtos p
                JOIN grupos g ON p.grupo_id = g.id";
-
+            }
 
             // Adicionar filtro de grupo se não for "todos"
             if ($grupoSelecionado !== 'todos') {
@@ -234,15 +276,28 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             $stmt->execute();
             $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if (!empty($produtos)) {
+            // Buscar propagandas ativas se configurado para exibir
+            $propagandas = [];
+            if ($propagandas_ativas) {
+                // Modificar a consulta SQL para respeitar os tipos do PostgreSQL
+                if ($dbType == 'pgsql') {
+                    $sqlPropagandas = "SELECT id, titulo, descricao, imagem, ordem FROM propagandas WHERE ativo = TRUE ORDER BY ordem, id";
+                } else {
+                    // Para MySQL e outros que aceitam 1/0 como boolean
+                    $sqlPropagandas = "SELECT id, titulo, descricao, imagem, ordem FROM propagandas WHERE ativo = 1 ORDER BY ordem, id";
+                }
+                $stmtPropagandas = $pdo->query($sqlPropagandas);
+                $propagandas = $stmtPropagandas->fetchAll(PDO::FETCH_ASSOC);
+            }
 
+            if (!empty($produtos)) {
                 $grupos = [];
                 foreach ($produtos as $produto) {
                     $grupos[$produto['grupo']][] = $produto;
                 }
 
                 // Se foi selecionado apenas um grupo, desativa o carrossel
-                $mostrarCarrossel = ($grupoSelecionado === 'todos');
+                $mostrarCarrossel = ($grupoSelecionado === 'todos') || !empty($propagandas);
 
                 if ($mostrarCarrossel) {
                     echo '<div id="grupoCarousel" class="carousel slide" data-bs-ride="carousel">';
@@ -251,6 +306,21 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
                 $index = 0;
                 $primeiro = true;
+                $slideIndex = 0;
+
+                // Função para misturar propagandas entre grupos
+                function intercalarPropagandas($indiceGrupo, $totalGrupos, $propagandas)
+                {
+                    if (empty($propagandas)) return false;
+
+                    // Exibe propaganda após cada 2 grupos (ajuste conforme necessário)
+                    $frequencia = 2;
+
+                    return ($indiceGrupo > 0 && $indiceGrupo % $frequencia === 0);
+                }
+
+                $totalGrupos = count($grupos);
+                $grupoAtual = 0;
 
                 foreach ($grupos as $nomeGrupo => $listaProdutos) {
                     $numProdutos = count($listaProdutos);
@@ -316,15 +386,70 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
                     $primeiro = false;
                     $index++;
+                    $slideIndex++;
+                    $grupoAtual++;
+
+                    // Inserir propaganda após alguns grupos se configurado e tiver propagandas disponíveis
+                    // $tempo_propagandas = 5000; // Define o tempo das propagandas (em milissegundos)
+
+                    if ($propagandas_ativas && !empty($propagandas)) {
+                        $deveExibirPropaganda = intercalarPropagandas($grupoAtual, $totalGrupos, $propagandas);
+
+                        if ($deveExibirPropaganda) {
+                            // Pega uma propaganda da lista (de forma circular)
+                            $indicePropaganda = ($grupoAtual / floor($totalGrupos / count($propagandas)) - 1) % count($propagandas);
+                            $propaganda = $propagandas[intval($indicePropaganda)];
+
+                            // Adiciona o slide de propaganda
+                            echo '<div class="carousel-item" data-bs-interval="' . $tempo_propagandas . '">';
+                            echo '<div class="propaganda-item">';
+                            echo '<div class="position-relative">';
+
+                            // Imagem da propaganda
+                            echo '<img src="uploads/propagandas/' . htmlspecialchars($propaganda['imagem']) . '" 
+                                     class="propaganda-imagem" alt="' . htmlspecialchars($propaganda['titulo']) . '">';
+
+                            // Título/descrição na parte inferior
+                            if (!empty($propaganda['titulo']) || !empty($propaganda['descricao'])) {
+                                echo '<div class="propaganda-titulo">';
+                                if (!empty($propaganda['titulo'])) {
+                                    echo '<h3>' . htmlspecialchars($propaganda['titulo']) . '</h3>';
+                                }
+                                if (!empty($propaganda['descricao'])) {
+                                    echo '<p class="mb-0">' . htmlspecialchars($propaganda['descricao']) . '</p>';
+                                }
+                                echo '</div>';
+                            }
+
+                            echo '</div>'; // fecha position-relative
+                            echo '</div>'; // fecha propaganda-item
+                            echo '</div>'; // fecha carousel-item
+
+                            $slideIndex++;
+                        }
+                    }
                 }
 
                 if ($mostrarCarrossel) {
                     echo '</div>'; // fecha carousel-inner
+
+                    // Adiciona controles de navegação se houver mais de um slide
+                    if ($slideIndex > 1) {
+                        // echo '<button class="carousel-control-prev" type="button" data-bs-target="#grupoCarousel" data-bs-slide="prev">';
+                        // echo '<span class="carousel-control-prev-icon" aria-hidden="true"></span>';
+                        // echo '<span class="visually-hidden">Anterior</span>';
+                        // echo '</button>';
+                        // echo '<button class="carousel-control-next" type="button" data-bs-target="#grupoCarousel" data-bs-slide="next">';
+                        // echo '<span class="carousel-control-next-icon" aria-hidden="true"></span>';
+                        // echo '<span class="visually-hidden">Próximo</span>';
+                        // echo '</button>';
+                    }
+
                     echo '</div>'; // fecha grupoCarousel
                 }
+            } else {
+                echo '<div class="alert alert-warning m-5">Nenhum produto disponível para exibição.</div>';
             }
-            echo '<div class="alert alert-warning m-5">Nenhum produto disponível para exibição.</div>';
-
 
             $stmt = null;
             $pdo = null;
@@ -336,10 +461,10 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 </div>';
             }
             echo '<div class="alert alert-danger m-4">
-                <h4>Erro ao carregar a tabela de preços:</h4>
-                <p>' . htmlspecialchars($e->getMessage()) . '</p>
-                <p>Arquivo: ' . htmlspecialchars($e->getFile()) . ' (linha ' . $e->getLine() . ')</p>
-            </div>';
+                    <h4>Erro ao carregar a tabela de preços:</h4>
+                    <p>' . htmlspecialchars($e->getMessage()) . '</p>
+                    <p>Arquivo: ' . htmlspecialchars($e->getFile()) . ' (linha ' . $e->getLine() . ')</p>
+                </div>';
         }
         ?>
     </div>
@@ -361,6 +486,8 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
     <?php if (!$isAjax): ?>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        // --- Substitua o bloco de script atual no final do arquivo tabela_precos.php ---
+
         <script>
             // Armazenar o valor de atualização automática para uso no JavaScript
             const atualizacaoAuto = <?= $atualizacao_auto ?>;
@@ -368,7 +495,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             let intervalAtualizacao = null;
 
             document.addEventListener('DOMContentLoaded', function() {
-                // Inicializa o relógio
+                // Inicializa o relógio (mantém o relógio atual sendo atualizado a cada segundo)
                 setInterval(function() {
                     const now = new Date();
                     const timeString = now.toLocaleTimeString('pt-BR');
@@ -380,9 +507,14 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     try {
                         const carouselElement = document.getElementById('grupoCarousel');
                         if (carouselElement) {
-                            const tempoBase = <?= $tempoSlide ?>;
+                            // MUDANÇA: Obter o tempo do primeiro slide ativo se disponível
+                            const activeItem = document.querySelector('.carousel-item.active');
+                            const initialInterval = activeItem ?
+                                parseInt(activeItem.dataset.bsInterval) :
+                                <?= $tempoSlide ?>;
+
                             const carousel = new bootstrap.Carousel(carouselElement, {
-                                interval: tempoBase,
+                                interval: initialInterval, // Usar o intervalo do slide ativo
                                 ride: 'carousel',
                                 wrap: true
                             });
@@ -404,11 +536,26 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                                 } else {
                                     carousel.next(); // Clique no meio - avança (comportamento padrão)
                                 }
+
+                                // Reinicia o intervalo do carrossel
+                                carousel._config.interval = false; // Desativa o intervalo automático
+                                setTimeout(() => {
+                                    const activeItem = document.querySelector('.carousel-item.active');
+                                    const interval = activeItem ? parseInt(activeItem.dataset.bsInterval) : <?= $tempoSlide ?>;
+                                    console.log("Novo intervalo:", interval, "ms");
+                                    carousel._config.interval = interval;
+                                    carousel._cycle();
+                                }, 100);
                             });
 
-                            // Resetar rolagem quando mudar de slide
-                            carouselElement.addEventListener('slide.bs.carousel', function() {
+                            // Adicionar evento para logging e debug dos tempos do slide
+                            carouselElement.addEventListener('slide.bs.carousel', function(e) {
                                 resetAllScrolls();
+
+                                // NOVO: Log para debug dos tempos do slide
+                                const proximoSlide = e.relatedTarget;
+                                const intervaloProximo = proximoSlide ? parseInt(proximoSlide.dataset.bsInterval) : <?= $tempoSlide ?>;
+                                console.log("Mudando para slide com intervalo:", intervaloProximo, "ms");
                             });
                         }
                     } catch (e) {
@@ -419,15 +566,28 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 // Configurar rolagem automática para tabelas grandes
                 setupAutoScroll();
 
-                // Atualizar horário local
+                // Atualizar horário local - APENAS UMA VEZ NO CARREGAMENTO
                 atualizarHoraLocal();
-                setInterval(atualizarHoraLocal, 60000);
+
+                // REMOVIDO o setInterval para atualizarHoraLocal
 
                 // Iniciar contagem regressiva para próxima atualização
                 if (atualizacaoAuto > 0) {
                     iniciarContagemRegressiva();
                 }
+
+                // Pré-carregar imagens de propagandas para transições suaves
+                precarregarImagensPropagandas();
             });
+
+            // Pré-carregar imagens de propagandas
+            function precarregarImagensPropagandas() {
+                const imagensPropagandas = document.querySelectorAll('.propaganda-imagem');
+                imagensPropagandas.forEach(img => {
+                    const imgPreload = new Image();
+                    imgPreload.src = img.src;
+                });
+            }
 
             function setupAutoScroll() {
                 const scrollContainers = document.querySelectorAll('.tabela-scroll');
@@ -500,7 +660,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 });
             }
 
-            // Atualizar horário local
+            // Atualizar horário local - Esta função só será chamada no carregamento inicial
             function atualizarHoraLocal() {
                 const agora = new Date();
                 const horaFormatada = agora.toLocaleTimeString('pt-BR', {
