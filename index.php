@@ -1,6 +1,6 @@
 <?php
 
-include 'connection.php';
+// include 'connection.php';
 
 // Importante: Nenhum espaço, comentário ou código HTML antes desta linha
 // Primeiro inclua o arquivo de conexão que contém session_start()
@@ -145,6 +145,10 @@ require_once 'header.php';
             animation-delay: 0.9s;
         }
 
+        .menu-card:nth-child(5) {
+            animation-delay: 1.1s;
+        }
+
         .menu-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 14px 22px rgba(67, 97, 238, 0.15);
@@ -246,7 +250,7 @@ require_once 'header.php';
 
         <div class="dashboard-content">
             <div class="menu-grid">
-                <a href="tabela_precos.php" class="menu-card">
+                <a href="tabela_precos.php" target="_blank" class="menu-card">
                     <div class="menu-icon">
                         <i class="fas fa-table"></i>
                     </div>
@@ -273,6 +277,16 @@ require_once 'header.php';
                     <div class="menu-content">
                         <h3 class="menu-title">Cadastro de Produtos</h3>
                         <p class="menu-description">Adicione novos produtos e gerencie os existentes</p>
+                    </div>
+                </a>
+
+                <a href="excel.php" class="menu-card">
+                    <div class="menu-icon">
+                        <i class="fas fa-file-import"></i>
+                    </div>
+                    <div class="menu-content">
+                        <h3 class="menu-title">Importar CSV</h3>
+                        <p class="menu-description">Importe produtos em massa a partir de arquivos CSV</p>
                     </div>
                 </a>
 

@@ -326,7 +326,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     $numProdutos = count($listaProdutos);
                     $tempoGrupo = $tempoSlide + ($numProdutos * $tempoExtraPorProduto);
                     $tempoBaseRolagem = $tempoRolagem * 1000;
-                    $modoExibicao = $numProdutos > 5 ? 'grande' : 'normal';
+                    $modoExibicao = $numProdutos > 10 ? 'grande' : 'normal';
 
                     if ($mostrarCarrossel) {
                         echo '<div class="carousel-item ' . ($primeiro ? 'active' : '') . '" data-bs-interval="' . ($modoExibicao == 'grande' ? max($tempoGrupo, $tempoBaseRolagem) : $tempoGrupo) . '">';
@@ -486,7 +486,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
     <?php if (!$isAjax): ?>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        // --- Substitua o bloco de script atual no final do arquivo tabela_precos.php ---
+
 
         <script>
             // Armazenar o valor de atualização automática para uso no JavaScript

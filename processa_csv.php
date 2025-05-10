@@ -3,7 +3,9 @@
 include_once 'connection.php';
 
 $arquivo = $_FILES['arquivo'];
-// var_dump($arquivo);
+// Captura o grupo selecionado pelo usuário (se houver)
+$grupo_selecionado = isset($_POST['grupo_selecionado']) && !empty($_POST['grupo_selecionado']) ?
+    (int)$_POST['grupo_selecionado'] : null;
 
 $linhas_importadas = 0;
 $linhas_falha = 0;
@@ -50,29 +52,44 @@ if ($arquivo['type'] == "text/csv") {
             // Se tiver coluna de descrição, usa os índices ajustados
             $descricao = isset($linha[$indice_descricao]) && !empty($linha[$indice_descricao]) ?
                 $linha[$indice_descricao] : null;
-            $grupo_id = isset($linha[$indice_grupo_id]) && !empty($linha[$indice_grupo_id]) ?
+            $grupo_id_csv = isset($linha[$indice_grupo_id]) && !empty($linha[$indice_grupo_id]) ?
                 (int)$linha[$indice_grupo_id] : null;
             $preco = isset($linha[$indice_preco]) ? str_replace(',', '.', $linha[$indice_preco]) : null;
         } else {
             // Se não tiver coluna de descrição (como no seu CSV original)
             $descricao = null;
-            $grupo_id = isset($linha[2]) && !empty($linha[2]) ? (int)$linha[2] : null;
+            $grupo_id_csv = isset($linha[2]) && !empty($linha[2]) ? (int)$linha[2] : null;
             $preco = isset($linha[3]) ? str_replace(',', '.', $linha[3]) : null;
         }
+
+        // Prioriza o grupo selecionado pelo usuário, se existir
+        $grupo_id = $grupo_selecionado !== null ? $grupo_selecionado : $grupo_id_csv;
 
         // Valida o preço
         if ($preco === null || !is_numeric($preco)) {
             $preco = 0.00; // Define um valor padrão para preco caso esteja ausente ou inválido
         }
 
-        // Prepara a query
-        $query_produto = "INSERT INTO produtos (codigo, nome, descricao, grupo_id, preco) 
-                          VALUES (:codigo, :nome, :descricao, :grupo_id, :preco)";
+        // Verifica se o campo 'ativo' existe
+        $checkColumnQuery = "SELECT column_name 
+                            FROM information_schema.columns 
+                            WHERE table_name='produtos' AND column_name='ativo'";
+        $checkStmt = $pdo->query($checkColumnQuery);
+        $columnExists = $checkStmt->fetchColumn();
+
+        // Prepara a query considerando se o campo 'ativo' existe
+        if ($columnExists) {
+            $query_produto = "INSERT INTO produtos (codigo, nome, descricao, grupo_id, preco, ativo) 
+                            VALUES (:codigo, :nome, :descricao, :grupo_id, :preco, TRUE)";
+        } else {
+            $query_produto = "INSERT INTO produtos (codigo, nome, descricao, grupo_id, preco) 
+                            VALUES (:codigo, :nome, :descricao, :grupo_id, :preco)";
+        }
 
         $stmt = $pdo->prepare($query_produto);
         $stmt->bindValue(':codigo', $codigo);
         $stmt->bindValue(':nome', $nome);
-        $stmt->bindValue(':descricao', $descricao); // Sempre NULL neste caso
+        $stmt->bindValue(':descricao', $descricao);
         $stmt->bindValue(':grupo_id', $grupo_id);
         $stmt->bindValue(':preco', (float)$preco); // Garante que seja tratado como float
 
@@ -92,8 +109,28 @@ if ($arquivo['type'] == "text/csv") {
         }
     }
 
+    // Informações sobre o grupo utilizado
+    $info_grupo = "";
+    if ($grupo_selecionado !== null) {
+        // Busca o nome do grupo selecionado
+        $query_grupo = "SELECT nome FROM grupos WHERE id = :id";
+        $stmt_grupo = $pdo->prepare($query_grupo);
+        $stmt_grupo->bindValue(':id', $grupo_selecionado);
+        $stmt_grupo->execute();
+        $grupo = $stmt_grupo->fetch(PDO::FETCH_ASSOC);
+
+        if ($grupo) {
+            $info_grupo = "Todos os produtos foram importados para o grupo: " . $grupo['nome'] . " (ID: $grupo_selecionado)<br>";
+        } else {
+            $info_grupo = "Grupo selecionado (ID: $grupo_selecionado) utilizado para todos os produtos<br>";
+        }
+    } else {
+        $info_grupo = "Utilizando os grupos definidos no arquivo CSV<br>";
+    }
+
     echo "Linhas importadas: " . $linhas_importadas . "<br>";
     echo "Linhas com falha: " . $linhas_falha . "<br>";
+    echo $info_grupo;
     if ($tem_descricao) {
         echo "Estrutura detectada: CSV COM campo de descrição<br>";
     } else {

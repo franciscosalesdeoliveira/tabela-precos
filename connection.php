@@ -84,7 +84,7 @@ function getNewConnection()
         return new PDO($dsn, $usuario, $senha, $options);
     } catch (PDOException $e) {
         error_log("Erro ao criar nova conexão: " . $e->getMessage());
-        return null;
+        throw new Exception("Falha ao criar nova conexão PDO.");
     }
 }
 
