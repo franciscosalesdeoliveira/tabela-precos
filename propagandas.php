@@ -3,7 +3,6 @@ $titulo = "Gerenciar Propagandas";
 include_once 'connection.php';
 include_once 'header.php';
 
-
 // Verificar se existe pasta de uploads e criar se não existir
 $uploadDir = 'uploads/propagandas/';
 if (!file_exists($uploadDir)) {
@@ -13,17 +12,19 @@ if (!file_exists($uploadDir)) {
 // Processar exclusão de propaganda
 if (isset($_GET['excluir']) && is_numeric($_GET['excluir'])) {
     try {
-        // Buscar nome da imagem antes de excluir
-        $stmt = $pdo->prepare("SELECT imagem FROM propagandas WHERE id = ?");
+        // Buscar informações da imagem antes de excluir
+        $stmt = $pdo->prepare("SELECT imagem, tipo_imagem FROM propagandas WHERE id = ?");
         $stmt->execute([$_GET['excluir']]);
-        $imagem = $stmt->fetchColumn();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $imagem = $result['imagem'] ?? null;
+        $tipoImagem = $result['tipo_imagem'] ?? 'local';
 
         // Excluir registro do banco
         $stmt = $pdo->prepare("DELETE FROM propagandas WHERE id = ?");
         $stmt->execute([$_GET['excluir']]);
 
-        // Remover arquivo se existir
-        if ($imagem && file_exists($uploadDir . $imagem)) {
+        // Remover arquivo local se existir e for do tipo local
+        if ($tipoImagem == 'local' && $imagem && file_exists($uploadDir . $imagem)) {
             unlink($uploadDir . $imagem);
         }
 
@@ -65,52 +66,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ordem = isset($_POST['ordem']) ? intval($_POST['ordem']) : 0;
     $ativo = isset($_POST['ativo']) ? 1 : 0;
     $id = isset($_POST['id']) ? intval($_POST['id']) : null;
-
-    // Flag para controlar se há upload de arquivo
-    $temArquivo = isset($_FILES['imagem']) && $_FILES['imagem']['error'] !== UPLOAD_ERR_NO_FILE;
+    $tipoImagem = $_POST['tipo_imagem'] ?? 'local';
+    $urlImagem = isset($_POST['url_imagem']) ? trim($_POST['url_imagem']) : '';
 
     try {
-        // Processar o upload da imagem se houver
+        // Processamento de imagem baseado no tipo selecionado
         $nomeArquivo = null;
-        if ($temArquivo) {
-            // Verificar extensão
-            $extensao = strtolower(pathinfo($_FILES['imagem']['name'], PATHINFO_EXTENSION));
-            $extensoesPermitidas = ['jpg', 'jpeg', 'png', 'gif'];
-
-            if (!in_array($extensao, $extensoesPermitidas)) {
-                throw new Exception("Formato de arquivo não permitido. Use: " . implode(', ', $extensoesPermitidas));
+        
+        if ($tipoImagem == 'url') {
+            // Validar URL
+            if (empty($urlImagem)) {
+                throw new Exception("Por favor, forneça uma URL válida para a imagem.");
             }
+            
+            // Detectar e converter URL do Google Drive se necessário
+            if (strpos($urlImagem, 'drive.google.com/file/d/') !== false) {
+                // Extrai o ID do arquivo do Google Drive
+                preg_match('/\/d\/([^\/]*)/', $urlImagem, $matches);
+                if (isset($matches[1])) {
+                    // Armazenamos a URL original, mas a função getImagemUrl fará a conversão
+                    $urlImagem = "https://drive.google.com/file/d/" . $matches[1] . "/view";
+                }
+            }
+            
+            if (!filter_var($urlImagem, FILTER_VALIDATE_URL)) {
+                throw new Exception("A URL fornecida não é válida.");
+            }
+            $nomeArquivo = $urlImagem;
+        } else {
+            // Tipo Local - Processar upload
+            $temArquivo = isset($_FILES['imagem']) && $_FILES['imagem']['error'] !== UPLOAD_ERR_NO_FILE;
+            
+            if ($temArquivo) {
+                // Verificar extensão
+                $extensao = strtolower(pathinfo($_FILES['imagem']['name'], PATHINFO_EXTENSION));
+                $extensoesPermitidas = ['jpg', 'jpeg', 'png', 'gif'];
 
-            // Gerar nome único para o arquivo
-            $nomeArquivo = 'propaganda_' . time() . '_' . uniqid() . '.' . $extensao;
+                if (!in_array($extensao, $extensoesPermitidas)) {
+                    throw new Exception("Formato de arquivo não permitido. Use: " . implode(', ', $extensoesPermitidas));
+                }
 
-            // Mover o arquivo para a pasta de uploads
-            if (!move_uploaded_file($_FILES['imagem']['tmp_name'], $uploadDir . $nomeArquivo)) {
-                throw new Exception("Falha ao salvar o arquivo. Verifique as permissões da pasta.");
+                // Gerar nome único para o arquivo
+                $nomeArquivo = 'propaganda_' . time() . '_' . uniqid() . '.' . $extensao;
+
+                // Mover o arquivo para a pasta de uploads
+                if (!move_uploaded_file($_FILES['imagem']['tmp_name'], $uploadDir . $nomeArquivo)) {
+                    throw new Exception("Falha ao salvar o arquivo. Verifique as permissões da pasta.");
+                }
+            } elseif (!$id) {
+                // Se for nova propaganda e não tem imagem local
+                throw new Exception("É necessário enviar uma imagem para a propaganda.");
             }
         }
 
         // Decidir entre update ou insert
         if ($id) {
             // Se for edição
-            if ($temArquivo) {
-                // Se tem nova imagem, buscar nome da anterior para excluir
-                $stmt = $pdo->prepare("SELECT imagem FROM propagandas WHERE id = ?");
-                $stmt->execute([$id]);
-                $imagemAntiga = $stmt->fetchColumn();
-
-                // Atualizar com nova imagem
+            $imagemAtualizada = false;
+            
+            if ($tipoImagem == 'url' && !empty($urlImagem)) {
+                // Atualizar com URL
                 $stmt = $pdo->prepare("UPDATE propagandas SET 
-                    titulo = ?, descricao = ?, imagem = ?, ativo = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP 
+                    titulo = ?, descricao = ?, imagem = ?, tipo_imagem = ?, ativo = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE id = ?");
-                $stmt->execute([$titulo, $descricao, $nomeArquivo, $ativo, $ordem, $id]);
-
-                // Remover imagem antiga
-                if ($imagemAntiga && file_exists($uploadDir . $imagemAntiga)) {
+                $stmt->execute([$titulo, $descricao, $urlImagem, 'url', $ativo, $ordem, $id]);
+                $imagemAtualizada = true;
+            } elseif ($tipoImagem == 'local' && $nomeArquivo) {
+                // Buscar informações da imagem antiga antes de atualizar
+                $stmt = $pdo->prepare("SELECT imagem, tipo_imagem FROM propagandas WHERE id = ?");
+                $stmt->execute([$id]);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                $imagemAntiga = $result['imagem'] ?? null;
+                $tipoImagemAntigo = $result['tipo_imagem'] ?? 'local';
+                
+                // Atualizar com nova imagem local
+                $stmt = $pdo->prepare("UPDATE propagandas SET 
+                    titulo = ?, descricao = ?, imagem = ?, tipo_imagem = ?, ativo = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?");
+                $stmt->execute([$titulo, $descricao, $nomeArquivo, 'local', $ativo, $ordem, $id]);
+                
+                // Remover imagem antiga se for local
+                if ($tipoImagemAntigo == 'local' && $imagemAntiga && file_exists($uploadDir . $imagemAntiga)) {
                     unlink($uploadDir . $imagemAntiga);
                 }
-            } else {
-                // Atualizar sem alterar imagem
+                $imagemAtualizada = true;
+            }
+            
+            // Se não houver atualização de imagem, apenas atualizar os outros campos
+            if (!$imagemAtualizada) {
                 $stmt = $pdo->prepare("UPDATE propagandas SET 
                     titulo = ?, descricao = ?, ativo = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE id = ?");
@@ -120,13 +163,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mensagem = "Propaganda atualizada com sucesso!";
         } else {
             // Se for nova propaganda
-            if (!$temArquivo) {
-                throw new Exception("É necessário enviar uma imagem para a propaganda.");
+            if ($tipoImagem == 'url') {
+                $stmt = $pdo->prepare("INSERT INTO propagandas (titulo, descricao, imagem, tipo_imagem, ativo, ordem) 
+                    VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$titulo, $descricao, $urlImagem, 'url', $ativo, $ordem]);
+            } else {
+                if (!$nomeArquivo) {
+                    throw new Exception("É necessário enviar uma imagem para a propaganda.");
+                }
+                $stmt = $pdo->prepare("INSERT INTO propagandas (titulo, descricao, imagem, tipo_imagem, ativo, ordem) 
+                    VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$titulo, $descricao, $nomeArquivo, 'local', $ativo, $ordem]);
             }
-
-            $stmt = $pdo->prepare("INSERT INTO propagandas (titulo, descricao, imagem, ativo, ordem) 
-                VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$titulo, $descricao, $nomeArquivo, $ativo, $ordem]);
 
             $mensagem = "Nova propaganda cadastrada com sucesso!";
         }
@@ -137,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tipoMensagem = "danger";
 
         // Remover arquivo enviado em caso de erro no banco
-        if (isset($nomeArquivo) && file_exists($uploadDir . $nomeArquivo)) {
+        if ($tipoImagem == 'local' && isset($nomeArquivo) && file_exists($uploadDir . $nomeArquivo)) {
             unlink($uploadDir . $nomeArquivo);
         }
     }
@@ -164,6 +212,41 @@ try {
     $mensagem = "Erro ao listar propagandas: " . $e->getMessage();
     $tipoMensagem = "danger";
     $propagandas = [];
+}
+
+// Função para obter a URL da imagem
+function getImagemUrl($propaganda, $uploadDir) {
+    $tipoImagem = $propaganda['tipo_imagem'] ?? 'local';
+    $imagem = $propaganda['imagem'] ?? '';
+    
+    if ($tipoImagem == 'url') {
+        // Verifica se é um link do Google Drive e formata corretamente
+        if (strpos($imagem, 'drive.google.com/file/d/') !== false) {
+            // Extrai o ID do arquivo do Google Drive
+            preg_match('/\/d\/([^\/]*)/', $imagem, $matches);
+            if (isset($matches[1])) {
+                $fileId = $matches[1];
+                return 'https://drive.google.com/uc?export=view&id=' . $fileId;
+            }
+        } elseif (strpos($imagem, 'drive.google.com/open') !== false) {
+            // Formato de URL drive.google.com/open?id=XXXX
+            $parts = parse_url($imagem);
+            parse_str($parts['query'] ?? '', $query);
+            if (isset($query['id'])) {
+                return 'https://drive.google.com/uc?export=view&id=' . $query['id'];
+            }
+        } elseif (strpos($imagem, 'docs.google.com/') !== false && strpos($imagem, 'd/') !== false) {
+            // Google Docs, Sheets, etc
+            preg_match('/\/d\/([^\/]*)/', $imagem, $matches);
+            if (isset($matches[1])) {
+                $fileId = $matches[1];
+                return 'https://drive.google.com/uc?export=view&id=' . $fileId;
+            }
+        }
+        return $imagem;
+    } else {
+        return $uploadDir . $imagem;
+    }
 }
 ?>
 
@@ -219,20 +302,63 @@ try {
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Tipo de Imagem</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tipo_imagem" id="tipo_local" value="local" 
+                            <?= (!$propagandaEdicao || ($propagandaEdicao && ($propagandaEdicao['tipo_imagem'] ?? 'local') == 'local')) ? 'checked' : '' ?>
+                            onchange="toggleImagemFields()">
+                        <label class="form-check-label" for="tipo_local">
+                            Upload de Arquivo Local
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tipo_imagem" id="tipo_url" value="url"
+                            <?= ($propagandaEdicao && ($propagandaEdicao['tipo_imagem'] ?? 'local') == 'url') ? 'checked' : '' ?>
+                            onchange="toggleImagemFields()">
+                        <label class="form-check-label" for="tipo_url">
+                            Link URL (Google Drive, etc.)
+                        </label>
+                    </div>
+                </div>
+
+                <div id="campo_upload" class="mb-3">
                     <label for="imagem" class="form-label">
                         <?= $propagandaEdicao ? 'Alterar Imagem (opcional)' : 'Imagem da Propaganda' ?>
                     </label>
-                    <input type="file" class="form-control" id="imagem" name="imagem" accept="image/*"
-                        <?= $propagandaEdicao ? '' : 'required' ?>>
+                    <input type="file" class="form-control" id="imagem" name="imagem" accept="image/*">
                     <div class="form-text">Formatos suportados: JPG, PNG, GIF.</div>
+                </div>
+
+                <div id="campo_url" class="mb-3" style="display: none;">
+                    <label for="url_imagem" class="form-label">URL da Imagem</label>
+                    <input type="url" class="form-control" id="url_imagem" name="url_imagem" 
+                        placeholder="https://drive.google.com/file/d/SEU_ID_AQUI/view"
+                        value="<?= ($propagandaEdicao && ($propagandaEdicao['tipo_imagem'] ?? 'local') == 'url') ? htmlspecialchars($propagandaEdicao['imagem']) : '' ?>">
+                    <div class="form-text">
+                        <p>Para Google Drive:</p>
+                        <ol class="small">
+                            <li>Faça upload da imagem no Google Drive</li>
+                            <li>Clique com botão direito → "Compartilhar" → "Qualquer pessoa com o link" → "Visualizador"</li>
+                            <li>Abra a imagem e copie a URL do navegador</li>
+                        </ol>
+                        <p class="text-danger">⚠️ É essencial configurar o compartilhamento da imagem para "Qualquer pessoa com o link"</p>
+                    </div>
                 </div>
 
                 <?php if ($propagandaEdicao && $propagandaEdicao['imagem']): ?>
                     <div class="mb-3">
                         <label class="form-label">Imagem Atual</label>
                         <div class="border p-2 rounded">
-                            <img src="<?= $uploadDir . htmlspecialchars($propagandaEdicao['imagem']) ?>"
-                                class="img-thumbnail" style="max-height: 150px;">
+                            <img src="<?= htmlspecialchars(getImagemUrl($propagandaEdicao, $uploadDir)) ?>"
+                                class="img-thumbnail" style="max-height: 150px;"
+                                onerror="this.onerror=null;this.classList.add('border-danger');this.style.opacity='0.3';">
+                            <?php if (($propagandaEdicao['tipo_imagem'] ?? 'local') == 'url'): ?>
+                                <div class="mt-2 small">
+                                    <a href="<?= htmlspecialchars($propagandaEdicao['imagem']) ?>" target="_blank" class="text-info">
+                                        <i class="bi bi-link-45deg"></i> Ver URL original
+                                    </a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -268,6 +394,7 @@ try {
                                 <th style="width: 80px;">Ordem</th>
                                 <th style="width: 100px;">Imagem</th>
                                 <th>Título</th>
+                                <th style="width: 100px;">Tipo</th>
                                 <th style="width: 100px;">Status</th>
                                 <th style="width: 150px;">Ações</th>
                             </tr>
@@ -277,9 +404,27 @@ try {
                                 <tr>
                                     <td class="text-center"><?= $propaganda['ordem'] ?></td>
                                     <td>
-                                        <?php if ($propaganda['imagem'] && file_exists($uploadDir . $propaganda['imagem'])): ?>
-                                            <img src="<?= $uploadDir . htmlspecialchars($propaganda['imagem']) ?>"
-                                                class="img-thumbnail" style="max-height: 60px;">
+                                        <?php 
+                                        $tipoImagem = $propaganda['tipo_imagem'] ?? 'local';
+                                        $imagemUrl = getImagemUrl($propaganda, $uploadDir);
+                                        $imagemExiste = $tipoImagem == 'url' || 
+                                            ($tipoImagem == 'local' && !empty($propaganda['imagem']) && file_exists($uploadDir . $propaganda['imagem']));
+                                        ?>
+                                        
+                                        <?php if ($imagemExiste): ?>
+                                            <div class="position-relative">
+                                                <img src="<?= htmlspecialchars($imagemUrl) ?>"
+                                                    class="img-thumbnail" style="max-height: 60px;" 
+                                                    onerror="this.onerror=null;this.classList.add('border-danger');this.style.opacity='0.3';">
+                                                
+                                                <?php if ($tipoImagem == 'url'): ?>
+                                                    <a href="<?= htmlspecialchars($propaganda['imagem']) ?>" target="_blank" 
+                                                       class="position-absolute top-0 end-0 badge bg-info" 
+                                                       title="Ver URL original">
+                                                        <i class="bi bi-link-45deg"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php else: ?>
                                             <span class="badge bg-danger">Sem imagem</span>
                                         <?php endif; ?>
@@ -289,6 +434,11 @@ try {
                                         <?php if ($propaganda['descricao']): ?>
                                             <br><small class="text-muted"><?= htmlspecialchars($propaganda['descricao']) ?></small>
                                         <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <?= ($propaganda['tipo_imagem'] ?? 'local') == 'url' ? 'URL Externa' : 'Arquivo Local' ?>
+                                        </span>
                                     </td>
                                     <td>
                                         <?php if ($propaganda['ativo']): ?>
@@ -329,5 +479,26 @@ try {
         </a>
     </div>
 </div>
+
+<script>
+function toggleImagemFields() {
+    const tipoLocal = document.getElementById('tipo_local');
+    const campoUpload = document.getElementById('campo_upload');
+    const campoUrl = document.getElementById('campo_url');
+    
+    if (tipoLocal.checked) {
+        campoUpload.style.display = 'block';
+        campoUrl.style.display = 'none';
+    } else {
+        campoUpload.style.display = 'none';
+        campoUrl.style.display = 'block';
+    }
+}
+
+// Inicializar o estado dos campos
+document.addEventListener('DOMContentLoaded', function() {
+    toggleImagemFields();
+});
+</script>
 
 <?php include_once 'footer.php'; ?>

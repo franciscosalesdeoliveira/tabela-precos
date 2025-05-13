@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sql = "INSERT INTO grupos (nome, ativo) VALUES (:grupo, :status)";
                 $stmt = $pdo->prepare($sql);
                 $stmt->bindValue(':grupo', $grupo);
-                $stmt->bindValue(':status', $status);
+                $stmt->bindValue(':status', $status, PDO::PARAM_BOOL); // Corrigido: usar PDO::PARAM_BOOL
                 $stmt->execute();
 
                 // Gerar nova mensagem e token após submissão bem-sucedida
@@ -80,10 +80,11 @@ if (!in_array($ordem_direcao, ['ASC', 'DESC'])) {
 $filtro_status = isset($_GET['status']) ? $_GET['status'] : 'todos';
 $where_status = '';
 
+// Corrigido: SQL para filtrar por status em campo boolean
 if ($filtro_status === 'ativos') {
-    $where_status = "WHERE ativo = 'true' OR ativo = true OR ativo = 't'";
+    $where_status = "WHERE ativo = TRUE";
 } elseif ($filtro_status === 'inativos') {
-    $where_status = "WHERE ativo = 'false' OR ativo = false OR ativo = 'f'";
+    $where_status = "WHERE ativo = FALSE";
 }
 
 // Consulta para contagem total com filtro de status
@@ -96,7 +97,7 @@ $total_paginas = ceil($total_registros / $registros_por_pagina);
 // Pesquisa com filtro de status
 if (!empty($_GET['search'])) {
     $data = "%" . $_GET['search'] . "%";
-    
+
     // Adicionar condição WHERE se necessário
     if (!empty($where_status)) {
         $sql = "SELECT * FROM grupos 
@@ -163,6 +164,15 @@ function urlFiltroStatus($status)
     $params['status'] = $status;
     $params['pagina'] = 1; // Voltar para a primeira página ao mudar o filtro
     return '?' . http_build_query($params);
+}
+
+// Função para checar se um grupo está ativo - corrigida para PostgreSQL boolean
+function isGrupoAtivo($grupo)
+{
+    // Tratar todas as representações possíveis de boolean true em PostgreSQL
+    return ($grupo['ativo'] === true || $grupo['ativo'] === 't' ||
+        $grupo['ativo'] === '1' || $grupo['ativo'] === 1 ||
+        $grupo['ativo'] === 'true');
 }
 
 // Ícone para indicar a direção da ordenação
@@ -287,7 +297,7 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                 </div>
             </div>
         </div>
-    
+
         <!-- Listagem de Grupos -->
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -306,12 +316,13 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                 <tbody>
                     <?php if (count($grupos) > 0): ?>
                         <?php foreach ($grupos as $grupo): ?>
-                            <tr class="<?= ($grupo['ativo'] === 'false' || $grupo['ativo'] === false || $grupo['ativo'] === 'f') ? 'table-secondary' : '' ?>">
+                            <?php $ehAtivo = isGrupoAtivo($grupo); ?>
+                            <tr class="<?= $ehAtivo ? '' : 'table-secondary' ?>">
                                 <td class="text-center"><?= htmlspecialchars($grupo['id']) ?></td>
                                 <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
                                 <td class="text-center">
-                                    <span class="badge <?= ($grupo['ativo'] === 'true' || $grupo['ativo'] === true || $grupo['ativo'] === 't') ? 'bg-success' : 'bg-danger' ?>">
-                                        <?= ($grupo['ativo'] === 'true' || $grupo['ativo'] === true || $grupo['ativo'] === 't') ? 'Ativo' : 'Inativo' ?>
+                                    <span class="badge <?= $ehAtivo ? 'bg-success' : 'bg-danger' ?>">
+                                        <?= $ehAtivo ? 'Ativo' : 'Inativo' ?>
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -320,13 +331,13 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                                             <i class="bi bi-pencil"></i> Editar
                                         </a>
                                         <?php
-                                        $ehAtivo = ($grupo['ativo'] === 'true' || $grupo['ativo'] === true || $grupo['ativo'] === 't');
                                         $acaoCor = $ehAtivo ? 'warning' : 'success';
                                         $acaoIcone = $ehAtivo ? 'bi-toggle-off' : 'bi-toggle-on';
                                         $acaoTexto = $ehAtivo ? 'Inativar' : 'Ativar';
+                                        $acaoParamtr = $ehAtivo ? 'inativar' : 'ativar';
                                         ?>
                                         <a class="btn btn-<?= $acaoCor ?> btn-sm"
-                                            href="toggle_status_grupo.php?id=<?= $grupo['id'] ?>&acao=<?= $grupo['ativo'] === 'true' ? 'inativar' : 'ativar' ?>">
+                                            href="toggle_status_grupo.php?id=<?= $grupo['id'] ?>&acao=<?= $acaoParamtr ?>">
                                             <i class="bi <?= $acaoIcone ?>"></i> <?= $acaoTexto ?>
                                         </a>
                                         <button type="button" class="btn btn-danger btn-sm"

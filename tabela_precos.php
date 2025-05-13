@@ -6,7 +6,6 @@ require_once 'connection.php';
 // Verificar se é uma atualização via AJAX
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
-
 // Configurações da tabela
 $limiteGrupo = isset($_GET['limite']) && is_numeric($_GET['limite']) ? (int)$_GET['limite'] : 5;
 $tempoSlide = isset($_GET['tempo']) && is_numeric($_GET['tempo']) ? (int)$_GET['tempo'] * 1000 : 5000;
@@ -229,6 +228,36 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
         try {
             $dbType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 
+            // Verificar se as colunas 'ativo' existem nas tabelas produtos e grupos
+            $temColunaAtivoProdutos = false;
+            $temColunaAtivoGrupos = false;
+
+            try {
+                // Verificar coluna 'ativo' em produtos
+                $checkStmt = $pdo->prepare("SELECT * FROM produtos LIMIT 1");
+                $checkStmt->execute();
+                $colunas = [];
+                for ($i = 0; $i < $checkStmt->columnCount(); $i++) {
+                    $colMeta = $checkStmt->getColumnMeta($i);
+                    $colunas[] = strtolower($colMeta['name']);
+                }
+                $temColunaAtivoProdutos = in_array('ativo', $colunas);
+
+                // Verificar coluna 'ativo' em grupos
+                $checkStmt = $pdo->prepare("SELECT * FROM grupos LIMIT 1");
+                $checkStmt->execute();
+                $colunas = [];
+                for ($i = 0; $i < $checkStmt->columnCount(); $i++) {
+                    $colMeta = $checkStmt->getColumnMeta($i);
+                    $colunas[] = strtolower($colMeta['name']);
+                }
+                $temColunaAtivoGrupos = in_array('ativo', $colunas);
+            } catch (Exception $e) {
+                // Se ocorrer um erro, assumimos que as colunas não existem
+                $temColunaAtivoProdutos = false;
+                $temColunaAtivoGrupos = false;
+            }
+
             // Verificar se a coluna updated_at existe
             $temColuna = false;
             try {
@@ -244,24 +273,42 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 $temColuna = false;
             }
 
-            // Montar a consulta SQL com filtro de grupo se necessário
+            // Montar a consulta SQL com filtro de grupo se necessário e incluindo filtros de ativo
             if ($dbType == 'pgsql') {
                 $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
                       p.id as produto_id, g.id as grupo_id" .
                     ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
                FROM produtos p
-               JOIN grupos g ON p.grupo_id = g.id";
+               JOIN grupos g ON p.grupo_id = g.id
+               WHERE 1=1";
+
+                // Adicionar filtro de itens ativos se as colunas existirem
+                if ($temColunaAtivoGrupos) {
+                    $sql .= " AND g.ativo = TRUE";
+                }
+                if ($temColunaAtivoProdutos) {
+                    $sql .= " AND p.ativo = TRUE";
+                }
             } else {
                 $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
                       p.id as produto_id, g.id as grupo_id" .
                     ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
                FROM produtos p
-               JOIN grupos g ON p.grupo_id = g.id";
+               JOIN grupos g ON p.grupo_id = g.id
+               WHERE 1=1";
+
+                // Adicionar filtro de itens ativos se as colunas existirem
+                if ($temColunaAtivoGrupos) {
+                    $sql .= " AND g.ativo = 1";
+                }
+                if ($temColunaAtivoProdutos) {
+                    $sql .= " AND p.ativo = 1";
+                }
             }
 
             // Adicionar filtro de grupo se não for "todos"
             if ($grupoSelecionado !== 'todos') {
-                $sql .= " WHERE g.id = :grupo_id";
+                $sql .= " AND g.id = :grupo_id";
             }
 
             $sql .= " ORDER BY g.nome, p.nome";
@@ -390,8 +437,6 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     $grupoAtual++;
 
                     // Inserir propaganda após alguns grupos se configurado e tiver propagandas disponíveis
-                    // $tempo_propagandas = 5000; // Define o tempo das propagandas (em milissegundos)
-
                     if ($propagandas_ativas && !empty($propagandas)) {
                         $deveExibirPropaganda = intercalarPropagandas($grupoAtual, $totalGrupos, $propagandas);
 
@@ -435,6 +480,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
                     // Adiciona controles de navegação se houver mais de um slide
                     if ($slideIndex > 1) {
+                        // Controles de navegação comentados
                         // echo '<button class="carousel-control-prev" type="button" data-bs-target="#grupoCarousel" data-bs-slide="prev">';
                         // echo '<span class="carousel-control-prev-icon" aria-hidden="true"></span>';
                         // echo '<span class="visually-hidden">Anterior</span>';
@@ -569,8 +615,6 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 // Atualizar horário local - APENAS UMA VEZ NO CARREGAMENTO
                 atualizarHoraLocal();
 
-                // REMOVIDO o setInterval para atualizarHoraLocal
-
                 // Iniciar contagem regressiva para próxima atualização
                 if (atualizacaoAuto > 0) {
                     iniciarContagemRegressiva();
@@ -644,80 +688,104 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
             function resetAllScrolls() {
                 const scrollContainers = document.querySelectorAll('.tabela-scroll');
-
                 scrollContainers.forEach(container => {
-                    if (container.scrollData) {
+                    if (container.scrollData && container.scrollData.interval) {
                         clearInterval(container.scrollData.interval);
                         container.scrollData.currentPosition = 0;
                         container.style.top = '0px';
-
-                        setTimeout(() => {
-                            if (container.offsetHeight > container.parentElement.offsetHeight) {
-                                startScroll(container);
-                            }
-                        }, 500);
+                        startScroll(container);
                     }
                 });
             }
 
-            // Atualizar horário local - Esta função só será chamada no carregamento inicial
             function atualizarHoraLocal() {
-                const agora = new Date();
-                const horaFormatada = agora.toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                });
-                document.getElementById('hora-local').textContent = horaFormatada;
+                const now = new Date();
+                const horaLocal = now.toLocaleTimeString('pt-BR');
+                document.getElementById('hora-local').innerText = horaLocal;
             }
 
-            // Iniciar contagem regressiva para próxima atualização
             function iniciarContagemRegressiva() {
-                // Limpar intervalo anterior se existir
+                // Limpar qualquer intervalo existente
                 if (intervalAtualizacao) {
                     clearInterval(intervalAtualizacao);
                 }
 
-                // Elemento para mostrar tempo restante
-                const tempoRestanteEl = document.getElementById('tempo-restante');
+                // Configurar o novo intervalo
+                tempoRestante = atualizacaoAuto * 60; // Reiniciar contagem (em segundos)
+                atualizarContador();
 
-                // Formato da exibição do tempo
-                function formatarTempo(segundos) {
-                    const minutos = Math.floor(segundos / 60);
-                    const segs = segundos % 60;
-
-                    if (minutos > 0) {
-                        return `${minutos}:${segs.toString().padStart(2, '0')}`;
-                    } else {
-                        return `${segs}s`;
-                    }
-                }
-
-                // Atualizar a cada segundo
                 intervalAtualizacao = setInterval(() => {
                     tempoRestante--;
+                    atualizarContador();
 
+                    // Quando chegar a zero, recarregar a página
                     if (tempoRestante <= 0) {
-                        // Chegou a hora de atualizar
-                        clearInterval(intervalAtualizacao);
-
-                        // Recarregar página completa ao invés de usar AJAX
-                        // Isso corrige problemas com o contador de tempo
-                        window.location.reload();
-                    } else {
-                        // Atualizar o contador
-                        if (tempoRestanteEl) {
-                            tempoRestanteEl.textContent = formatarTempo(tempoRestante);
-                        } else {
-                            // Se o elemento não existir, parar o contador
-                            clearInterval(intervalAtualizacao);
-                            console.error("Elemento tempo-restante não encontrado!");
-                        }
+                        recarregarPagina();
                     }
                 }, 1000);
             }
+
+            function atualizarContador() {
+                const minutos = Math.floor(tempoRestante / 60);
+                const segundos = tempoRestante % 60;
+                const formatado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                document.getElementById('tempo-restante').innerText = formatado;
+            }
+
+            function recarregarPagina() {
+                // Mantém os parâmetros da URL atual
+                window.location.reload();
+            }
+
+            // Função para recarregar conteúdo via AJAX
+            function recarregarConteudoAjax() {
+                const xhr = new XMLHttpRequest();
+                const url = window.location.href + (window.location.href.includes('?') ? '&ajax=1' : '?ajax=1');
+
+                xhr.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+                        document.querySelector('.container-fluid').innerHTML = this.responseText;
+                        setupAutoScroll();
+                        atualizarHoraLocal();
+                        iniciarContagemRegressiva();
+                    }
+                };
+
+                xhr.open('GET', url, true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                xhr.send();
+            }
+
+            // Evento para teclas de atalho
+            document.addEventListener('keydown', function(e) {
+                const carouselElement = document.getElementById('grupoCarousel');
+                if (!carouselElement) return;
+
+                const carousel = bootstrap.Carousel.getInstance(carouselElement);
+                if (!carousel) return;
+
+                // Setas esquerda/direita para navegação
+                if (e.key === 'ArrowLeft') {
+                    carousel.prev();
+                } else if (e.key === 'ArrowRight') {
+                    carousel.next();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    // Tecla 'r' para recarregar
+                    recarregarPagina();
+                }
+            });
+
+            // Adicionar uma função para verificar periodicamente se há atualizações no banco de dados
+            // Esta é uma solução opcional que pode ser implementada posteriormente
         </script>
     <?php endif; ?>
 </body>
 
 </html>
+
+<?php
+// Se for uma solicitação AJAX, não incluir o footer
+if (!$isAjax) {
+    require_once 'footer.php';
+}
+?>

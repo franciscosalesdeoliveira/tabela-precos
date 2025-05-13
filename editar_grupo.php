@@ -87,92 +87,78 @@ try {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="pt-br">
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Mensagens de feedback -->
+            <?php if (!empty($mensagem)): ?>
+                <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
+                    <?= htmlspecialchars($mensagem) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+            <?php endif; ?>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($titulo) ?></title>
-    <!-- Bootstrap CSS incluído no header.php -->
-    <style>
-        .form-container {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h4 mb-0 text-center">Editar Grupo</h2>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" id="formEditar" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                        <input type="hidden" name="id" value="<?= $id ?>">
 
-        .buttons-container {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome do Grupo</label>
+                            <input type="text" class="form-control" id="nome" name="nome" 
+                                value="<?= htmlspecialchars($grupo['nome']) ?>" required>
+                            <div class="invalid-feedback">
+                                O nome do grupo não pode estar vazio.
+                            </div>
+                        </div>
 
-        .alert-container {
-            max-width: 600px;
-            margin: 10px auto;
-        }
-    </style>
-</head>
-
-<body>
-
-    <!-- Mensagens de feedback -->
-    <?php if (!empty($mensagem)): ?>
-        <div class="alert-container">
-            <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
-                <?= htmlspecialchars($mensagem) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="cadastro_grupos.php" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    <?php endif; ?>
-
-    <div class="form-container">
-        <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: white;">Editar Grupo</h2>
-
-        <form method="post" id="formEditar">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            <input type="hidden" name="id" value="<?= $id ?>">
-
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: bold; color: white;" for="nome">Nome do Grupo:</label>
-                <input class="form-control" type="text" name="nome" id="nome"
-                    value="<?= htmlspecialchars($grupo['nome']) ?>" required>
-            </div>
-
-            <div class="buttons-container">
-                <button class="btn btn-primary" type="submit">Salvar</button>
-                <a href="cadastro_grupos.php" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form>
     </div>
+</div>
 
-    <script>
-        // Validação do formulário no lado do cliente
-        document.getElementById('formEditar').addEventListener('submit', function(event) {
-            const nome = document.getElementById('nome').value.trim();
-
-            if (nome === '') {
-                event.preventDefault();
-                alert('O nome do grupo não pode estar vazio.');
-                document.getElementById('nome').focus();
-            }
+<script>
+    // Validação do formulário
+    (function() {
+        'use strict';
+        
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
         });
+    })();
 
-        // Fechar alertas automaticamente após 5 segundos
-        document.addEventListener('DOMContentLoaded', function() {
-            const alertList = document.querySelectorAll('.alert');
-            alertList.forEach(function(alert) {
-                setTimeout(function() {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }, 5000);
-            });
+    // Fechar alertas automaticamente após 5 segundos
+    document.addEventListener('DOMContentLoaded', function() {
+        const alertList = document.querySelectorAll('.alert');
+        alertList.forEach(function(alert) {
+            setTimeout(function() {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
         });
-    </script>
-</body>
-
-</html>
+    });
+</script>
