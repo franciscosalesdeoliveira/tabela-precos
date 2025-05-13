@@ -8,6 +8,15 @@ include_once 'functions.php'; // Arquivo sugerido para funções auxiliares
 $mensagem = '';
 $tipo_mensagem = '';
 
+// Verificar se há mensagens na sessão
+if (isset($_SESSION['mensagem']) && isset($_SESSION['tipo_mensagem'])) {
+    $mensagem = $_SESSION['mensagem'];
+    $tipo_mensagem = $_SESSION['tipo_mensagem'];
+    // Limpar mensagens da sessão após uso
+    unset($_SESSION['mensagem']);
+    unset($_SESSION['tipo_mensagem']);
+}
+
 // Geração de token CSRF
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -22,25 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Validação de entrada
         $grupo = trim($_POST['grupo']);
+        $status = $_POST['status'] === 'ativo' ? 'true' : 'false';
 
         if (empty($grupo)) {
             $mensagem = "O nome do grupo não pode estar vazio.";
             $tipo_mensagem = "danger";
         } else {
             try {
-                $sql = "INSERT INTO grupos (nome) VALUES (:grupo)";
+                $sql = "INSERT INTO grupos (nome, ativo) VALUES (:grupo, :status)";
                 $stmt = $pdo->prepare($sql);
                 $stmt->bindValue(':grupo', $grupo);
+                $stmt->bindValue(':status', $status);
                 $stmt->execute();
 
                 // Gerar nova mensagem e token após submissão bem-sucedida
                 $mensagem = "Grupo cadastrado com sucesso!";
                 $tipo_mensagem = "success";
                 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-                // Redirecionamento opcional (comentado para mostrar a mensagem)
-                // header("Location: " . $_SERVER['PHP_SELF'] . "?success=1");
-                // exit;
             } catch (PDOException $e) {
                 $mensagem = "Erro ao cadastrar: " . filter_var($e->getMessage(), FILTER_SANITIZE_SPECIAL_CHARS);
                 $tipo_mensagem = "danger";
@@ -69,21 +76,42 @@ if (!in_array($ordem_direcao, ['ASC', 'DESC'])) {
     $ordem_direcao = 'ASC';
 }
 
-// Consulta para contagem total
-$sql_count = "SELECT COUNT(*) FROM grupos";
+// Configurar filtro de status
+$filtro_status = isset($_GET['status']) ? $_GET['status'] : 'todos';
+$where_status = '';
+
+if ($filtro_status === 'ativos') {
+    $where_status = "WHERE ativo = 'true' OR ativo = true OR ativo = 't'";
+} elseif ($filtro_status === 'inativos') {
+    $where_status = "WHERE ativo = 'false' OR ativo = false OR ativo = 'f'";
+}
+
+// Consulta para contagem total com filtro de status
+$sql_count = "SELECT COUNT(*) FROM grupos $where_status";
 $stmt_count = $pdo->prepare($sql_count);
 $stmt_count->execute();
 $total_registros = $stmt_count->fetchColumn();
 $total_paginas = ceil($total_registros / $registros_por_pagina);
 
-// Pesquisa
+// Pesquisa com filtro de status
 if (!empty($_GET['search'])) {
     $data = "%" . $_GET['search'] . "%";
-    $sql = "SELECT * FROM grupos 
-            WHERE unaccent(nome) ILIKE unaccent(:data)
-            OR CAST(id AS TEXT) ILIKE :data
-            ORDER BY $ordem_coluna $ordem_direcao
-            LIMIT :limit OFFSET :offset";
+    
+    // Adicionar condição WHERE se necessário
+    if (!empty($where_status)) {
+        $sql = "SELECT * FROM grupos 
+                $where_status AND 
+                (unaccent(nome) ILIKE unaccent(:data)
+                OR CAST(id AS TEXT) ILIKE :data)
+                ORDER BY $ordem_coluna $ordem_direcao
+                LIMIT :limit OFFSET :offset";
+    } else {
+        $sql = "SELECT * FROM grupos 
+                WHERE (unaccent(nome) ILIKE unaccent(:data)
+                OR CAST(id AS TEXT) ILIKE :data)
+                ORDER BY $ordem_coluna $ordem_direcao
+                LIMIT :limit OFFSET :offset";
+    }
 
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':data', $data, PDO::PARAM_STR);
@@ -91,7 +119,11 @@ if (!empty($_GET['search'])) {
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
 } else {
-    $sql = "SELECT * FROM grupos ORDER BY $ordem_coluna $ordem_direcao LIMIT :limit OFFSET :offset";
+    // Consulta sem busca
+    $sql = "SELECT * FROM grupos 
+            $where_status 
+            ORDER BY $ordem_coluna $ordem_direcao 
+            LIMIT :limit OFFSET :offset";
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -121,6 +153,15 @@ function urlPaginacao($pagina)
 {
     $params = $_GET;
     $params['pagina'] = $pagina;
+    return '?' . http_build_query($params);
+}
+
+// Função para criar URL de filtro de status
+function urlFiltroStatus($status)
+{
+    $params = $_GET;
+    $params['status'] = $status;
+    $params['pagina'] = 1; // Voltar para a primeira página ao mudar o filtro
     return '?' . http_build_query($params);
 }
 
@@ -198,14 +239,23 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
     <?php endif; ?>
 
     <!-- Formulário para cadastrar grupos -->
+
     <div class="form-container mt-3">
         <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: black;">Cadastro de Grupos</h2>
         <form method="POST" class="row g-3 align-items-end">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
-            <div class="col-md-8">
-                <label class="form-label" style="font-weight: bold; color: back;" for="grupo">Nome do Grupo:</label>
+            <div class="col-md-6">
+                <label class="form-label" style="font-weight: bold; color: black;" for="grupo">Nome do Grupo:</label>
                 <input class="form-control" type="text" name="grupo" id="grupo" required>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label" style="font-weight: bold; color: black;">Status:</label>
+                <select class="form-select" name="status" id="status">
+                    <option value="ativo" selected>Ativo</option>
+                    <option value="inativo">Inativo</option>
+                </select>
             </div>
 
             <div class="col-md-4 d-flex gap-2">
@@ -217,8 +267,8 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
     </div>
 
     <!-- Formulário de pesquisa -->
-    <div class="table-container mt-4">
-        <div class="row mb-3">
+    <div class="table-container">
+        <div class="row mb-3 mt-3">
             <div class="col-md-6">
                 <div class="input-group">
                     <input class="form-control" type="search" id="pesquisar" placeholder="Pesquisar..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
@@ -229,13 +279,15 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                     </button>
                 </div>
             </div>
-            <div class="col-md-6 text-end">
-                <span class="text-black">
-                    Exibindo <?= count($grupos) ?> de <?= $total_registros ?> registros
-                </span>
+            <div class="col-md-6">
+                <div class="btn-group float-end" role="group">
+                    <a href="<?= urlFiltroStatus('todos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'todos' ? 'active' : '' ?>">Todos</a>
+                    <a href="<?= urlFiltroStatus('ativos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'ativos' ? 'active' : '' ?>">Ativos</a>
+                    <a href="<?= urlFiltroStatus('inativos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'inativos' ? 'active' : '' ?>">Inativos</a>
+                </div>
             </div>
         </div>
-
+    
         <!-- Listagem de Grupos -->
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -247,21 +299,37 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                         <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>'">
                             Nome <?= iconeOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>
                         </th>
+                        <th class="text-center">Status</th>
                         <th class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (count($grupos) > 0): ?>
                         <?php foreach ($grupos as $grupo): ?>
-                            <tr>
+                            <tr class="<?= ($grupo['ativo'] === 'false' || $grupo['ativo'] === false || $grupo['ativo'] === 'f') ? 'table-secondary' : '' ?>">
                                 <td class="text-center"><?= htmlspecialchars($grupo['id']) ?></td>
                                 <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
                                 <td class="text-center">
+                                    <span class="badge <?= ($grupo['ativo'] === 'true' || $grupo['ativo'] === true || $grupo['ativo'] === 't') ? 'bg-success' : 'bg-danger' ?>">
+                                        <?= ($grupo['ativo'] === 'true' || $grupo['ativo'] === true || $grupo['ativo'] === 't') ? 'Ativo' : 'Inativo' ?>
+                                    </span>
+                                </td>
+                                <td class="text-center">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <a class="btn btn-primary btn-sm " href="editar_grupo.php?id=<?= $grupo['id'] ?>">
+                                        <a class="btn btn-primary btn-sm" href="editar_grupo.php?id=<?= $grupo['id'] ?>">
                                             <i class="bi bi-pencil"></i> Editar
                                         </a>
-                                        <button type="button" class="btn btn-danger btn-sm "
+                                        <?php
+                                        $ehAtivo = ($grupo['ativo'] === 'true' || $grupo['ativo'] === true || $grupo['ativo'] === 't');
+                                        $acaoCor = $ehAtivo ? 'warning' : 'success';
+                                        $acaoIcone = $ehAtivo ? 'bi-toggle-off' : 'bi-toggle-on';
+                                        $acaoTexto = $ehAtivo ? 'Inativar' : 'Ativar';
+                                        ?>
+                                        <a class="btn btn-<?= $acaoCor ?> btn-sm"
+                                            href="toggle_status_grupo.php?id=<?= $grupo['id'] ?>&acao=<?= $grupo['ativo'] === 'true' ? 'inativar' : 'ativar' ?>">
+                                            <i class="bi <?= $acaoIcone ?>"></i> <?= $acaoTexto ?>
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm"
                                             data-bs-toggle="modal"
                                             data-bs-target="#confirmarExclusao"
                                             data-id="<?= $grupo['id'] ?>"
@@ -274,7 +342,7 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="3" class="text-center">Nenhum grupo encontrado</td>
+                            <td colspan="4" class="text-center">Nenhum grupo encontrado</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -340,7 +408,9 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
 
         function searchData() {
             const termo = search.value.trim();
-            window.location = 'cadastro_grupos.php?search=' + encodeURIComponent(termo);
+            // Manter o filtro de status atual na busca
+            const status = '<?= $filtro_status ?>';
+            window.location = 'cadastro_grupos.php?search=' + encodeURIComponent(termo) + '&status=' + status;
         }
 
         // Configuração do modal de confirmação

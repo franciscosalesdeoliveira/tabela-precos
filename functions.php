@@ -260,3 +260,4 @@ function getGruposOptions($selected_id = null)
         return '<option value="">Erro ao carregar grupos</option>';
     }
 }
+
