@@ -1,7 +1,5 @@
 <?php
 
-// include 'connection.php';
-
 // Importante: Nenhum espaço, comentário ou código HTML antes desta linha
 // Primeiro inclua o arquivo de conexão que contém session_start()
 require_once 'connection.php';
@@ -147,6 +145,10 @@ require_once 'header.php';
 
         .menu-card:nth-child(5) {
             animation-delay: 1.1s;
+        }
+
+        .menu-card:nth-child(6) {
+            animation-delay: 1.3s;
         }
 
         .menu-card:hover {
@@ -299,10 +301,23 @@ require_once 'header.php';
                         <p class="menu-description">Personalize as configurações da sua tabela de preços</p>
                     </div>
                 </a>
+
+                <a href="contato.php" class="menu-card">
+                    <div class="menu-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="menu-content">
+                        <h3 class="menu-title">Fale Conosco</h3>
+                        <p class="menu-description">Entre em contato para suporte e atendimento</p>
+                    </div>
+                </a>
             </div>
 
             <div class="footer">
-                <p>Sistema de Tabela de Preços &copy; <?php echo date('Y'); ?></p>
+                <p>Sistema de Tabela de Preços &copy; <?php echo date('Y'); ?> <br><br>
+                    <i class="fab fa-whatsapp" style="color: green"></i>
+                    <a href="https://wa.me/5515981813900" class="text-decoration-none text-dark" target="_blank">(15) 98181-3900</a>
+                </p>
             </div>
         </div>
     </div>

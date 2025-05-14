@@ -166,7 +166,7 @@ function urlFiltroStatus($status)
     return '?' . http_build_query($params);
 }
 
-// Função para checar se um grupo está ativo - corrigida para PostgreSQL boolean
+// Função para checar se um grupo está ativo
 function isGrupoAtivo($grupo)
 {
     // Tratar todas as representações possíveis de boolean true em PostgreSQL
@@ -448,3 +448,7 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
 </body>
 
 </html>
+
+<?php
+require_once 'footer.php';
+?>
