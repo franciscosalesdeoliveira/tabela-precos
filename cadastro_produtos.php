@@ -3,8 +3,6 @@ $titulo = "Cadastro de Produtos";
 require_once 'connection.php';
 require_once 'header.php';
 
-
-
 $erros = [];
 $nome = $_POST['nome'] ?? '';
 $descricao = $_POST['descricao'] ?? '';
@@ -178,53 +176,62 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <div class="row">
-            <!-- Coluna do Formulário -->
-            <div class="col-lg-4 mb-4">
+        <!-- Formulário de Cadastro no Topo -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <div class="form-section">
-                    <h4 class="mb-3 text-center">Novo Produto</h4>
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label for="nome" class="form-label">Nome:</label>
+                    <form method="POST" class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="nome" class="form-label">Nome do Produto:</label>
                             <input type="text" class="form-control" name="nome" id="nome" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="descricao" class="form-label">Descrição:</label>
-                            <input type="text" class="form-control" name="descricao" id="descricao">
-                        </div>
-                        <div class="mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="grupo_id" class="form-label">Grupo:</label>
                             <select class="form-select" name="grupo_id" id="grupo_id" required>
+                                <option value="">Selecione um grupo</option>
                                 <?php foreach ($grupos as $grupo): ?>
                                     <option value="<?php echo $grupo['id']; ?>"><?php echo htmlspecialchars($grupo['nome']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="preco" class="form-label">Preço:</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
                                 <input type="number" class="form-control" name="preco" id="preco" step="0.01" required>
                             </div>
                         </div>
-                        <div class="mb-3 form-check">
-                            <input class="form-check-input" type="checkbox" name="ativo" id="ativo" checked>
-                            <label class="form-check-label" for="ativo">
-                                Produto Ativo
-                            </label>
+                        <div class="col-md-8 mb-3">
+                            <label for="descricao" class="form-label">Descrição:</label>
+                            <input type="text" class="form-control" name="descricao" id="descricao">
                         </div>
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button class="btn btn-warning" type="reset">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status:</label>
+                            <div class="d-flex align-items-center mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="ativo" id="ativo" checked>
+                                    <label class="form-check-label" for="ativo">
+                                        Ativo
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="reset" class="btn btn-warning me-2">
                                 <i class="fas fa-eraser me-1"></i> Limpar
                             </button>
-                            <button class="btn btn-success" type="submit">
+                            <button type="submit" class="btn btn-success">
                                 <i class="fas fa-save me-1"></i> Cadastrar
                             </button>
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
 
-                <!-- Links Úteis -->
+        <div class="row">
+            <!-- Coluna dos Links Úteis -->
+            <div class="col-lg-3 mb-4">
                 <div class="links-section">
                     <h4 class="mb-3 text-center">Links Úteis</h4>
                     <div class="d-grid gap-2">
@@ -245,7 +252,7 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <!-- Coluna da Tabela -->
-            <div class="col-lg-8">
+            <div class="col-lg-9">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Lista de Produtos</h5>
@@ -334,8 +341,6 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </body>
-
-
 
 <script>
     var search = document.getElementById("pesquisar");

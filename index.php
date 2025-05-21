@@ -95,6 +95,7 @@ require_once 'header.php';
             display: block;
             width: calc(100% + 1.3px);
             height: 46px;
+            transform: scaleY(-1);
         }
 
         .dashboard-wave .shape-fill {

@@ -144,7 +144,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             }
 
             .tabela-grande {
-                max-height: 65vh;
+                max-height: 95vh;
                 overflow-y: auto;
                 scrollbar-width: thin;
                 scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
@@ -176,7 +176,8 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             .tabela-grande th {
                 position: sticky;
                 top: 0;
-                z-index: 10;
+                z-index: 999;
+
             }
 
             .tabela-grande td {
@@ -217,11 +218,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 </head>
 
 <body class="<?= $estiloAtual['background'] ?> <?= $estiloAtual['text'] ?>">
-    <?php if (!$isAjax): ?>
-        <header class="<?= $estiloAtual['header_bg'] ?> text-center py-3">
-            <h1 class="display-4"><?= htmlspecialchars($titulo) ?></h1>
-        </header>
-    <?php endif; ?>
+
 
     <div class="container-fluid p-2">
         <?php
@@ -392,7 +389,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     echo '<div id="tabela-scroll-' . $index . '" class="tabela-scroll" data-total-produtos="' . $numProdutos . '" data-tempo-rolagem="' . $tempoBaseRolagem . '">';
 
                     // Tabela de produtos
-                    echo '<table class="table table-striped table-hover border">';
+                    echo '<table class="table  table-striped table-hover border">';
                     echo '<thead class="' . $estiloAtual['table_header'] . '">';
                     echo '<tr>';
                     echo '<th class="text-center fs-2" style="width: 70%;">Produto</th>';
@@ -527,6 +524,8 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- adicionar o footer padrão depois -->
     </footer>
 
 
@@ -782,10 +781,3 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 </body>
 
 </html>
-
-<?php
-// Se for uma solicitação AJAX, não incluir o footer
-if (!$isAjax) {
-    require_once 'footer.php';
-}
-?>

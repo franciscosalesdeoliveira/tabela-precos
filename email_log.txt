@@ -1,0 +1,290 @@
+[2025-05-15 14:20:00] Email enviado para: franciscos.oliveira.filho@gmail.com
+2025-05-15 12:19:58 SERVER -&gt; CLIENT: 220 smtp.gmail.com ESMTP 71dfb90a1353d-52db869a7e2sm111935e0c.2 - gsmtp<br>
+2025-05-15 12:19:58 CLIENT -&gt; SERVER: EHLO tabela.tadsbr.local<br>
+2025-05-15 12:19:58 SERVER -&gt; CLIENT: 250-smtp.gmail.com at your service, [187.73.198.198]250-SIZE 35882577250-8BITMIME250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH250-ENHANCEDSTATUSCODES250-PIPELINING250-CHUNKING250 SMTPUTF8<br>
+2025-05-15 12:19:58 CLIENT -&gt; SERVER: AUTH LOGIN<br>
+2025-05-15 12:19:58 SERVER -&gt; CLIENT: 334 VXNlcm5hbWU6<br>
+2025-05-15 12:19:58 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-15 12:19:59 SERVER -&gt; CLIENT: 334 UGFzc3dvcmQ6<br>
+2025-05-15 12:19:59 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-15 12:19:59 SERVER -&gt; CLIENT: 235 2.7.0 Accepted<br>
+2025-05-15 12:19:59 CLIENT -&gt; SERVER: MAIL FROM:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:19:59 SERVER -&gt; CLIENT: 250 2.1.0 OK 71dfb90a1353d-52db869a7e2sm111935e0c.2 - gsmtp<br>
+2025-05-15 12:19:59 CLIENT -&gt; SERVER: RCPT TO:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:19:59 SERVER -&gt; CLIENT: 250 2.1.5 OK 71dfb90a1353d-52db869a7e2sm111935e0c.2 - gsmtp<br>
+2025-05-15 12:19:59 CLIENT -&gt; SERVER: DATA<br>
+2025-05-15 12:19:59 SERVER -&gt; CLIENT: 354 Go ahead 71dfb90a1353d-52db869a7e2sm111935e0c.2 - gsmtp<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Date: Thu, 15 May 2025 14:19:57 +0200<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: To: Atendimento &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: From: =?UTF-8?Q?Sistema_de_Contato_-_Tabela_de_Pre=C3=A7os?= &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Reply-To: Francisco &lt;franciscosalesdeoliveira@outlook.com&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Subject: Contato via Site: Teste<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Message-ID: &lt;gLf1fk1l8yc7Khu0nswpHjjlJLR20UVSknjXz1QlQ@tabela.tadsbr.local&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: X-Mailer: PHPMailer 6.10.0 (https://github.com/PHPMailer/PHPMailer)<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: MIME-Version: 1.0<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Content-Type: multipart/alternative;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:  boundary=&quot;b1=_gLf1fk1l8yc7Khu0nswpHjjlJLR20UVSknjXz1QlQ&quot;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Content-Transfer-Encoding: 8bit<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: --b1=_gLf1fk1l8yc7Khu0nswpHjjlJLR20UVSknjXz1QlQ<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Content-Type: text/plain; charset=us-ascii<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Nome: Francisco<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Email: franciscosalesdeoliveira@outlook.com<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Assunto: Teste<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Mensagem:<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Teste 123<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: --b1=_gLf1fk1l8yc7Khu0nswpHjjlJLR20UVSknjXz1QlQ<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: Content-Type: text/html; charset=us-ascii<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:                 &lt;h2&gt;Nova mensagem de contato&lt;/h2&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Nome:&lt;/strong&gt; Francisco&lt;/p&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Email:&lt;/strong&gt; franciscosalesdeoliveira@outlook.com&lt;/p&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Assunto:&lt;/strong&gt; Teste&lt;/p&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Mensagem:&lt;/strong&gt;&lt;/p&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:                 &lt;p&gt;Teste 123&lt;/p&gt;<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER:             <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: --b1=_gLf1fk1l8yc7Khu0nswpHjjlJLR20UVSknjXz1QlQ--<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: .<br>
+2025-05-15 12:20:00 SERVER -&gt; CLIENT: 250 2.0.0 OK  1747311599 71dfb90a1353d-52db869a7e2sm111935e0c.2 - gsmtp<br>
+2025-05-15 12:20:00 CLIENT -&gt; SERVER: QUIT<br>
+2025-05-15 12:20:00 SERVER -&gt; CLIENT: 221 2.0.0 closing connection 71dfb90a1353d-52db869a7e2sm111935e0c.2 - gsmtp<br>
+
+
+[2025-05-15 14:21:21] Email enviado para: franciscos.oliveira.filho@gmail.com
+2025-05-15 12:21:19 SERVER -&gt; CLIENT: 220 smtp.gmail.com ESMTP 71dfb90a1353d-52c68a5a7desm8793551e0c.34 - gsmtp<br>
+2025-05-15 12:21:19 CLIENT -&gt; SERVER: EHLO tabela.tadsbr.local<br>
+2025-05-15 12:21:19 SERVER -&gt; CLIENT: 250-smtp.gmail.com at your service, [187.73.198.198]250-SIZE 35882577250-8BITMIME250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH250-ENHANCEDSTATUSCODES250-PIPELINING250-CHUNKING250 SMTPUTF8<br>
+2025-05-15 12:21:19 CLIENT -&gt; SERVER: AUTH LOGIN<br>
+2025-05-15 12:21:19 SERVER -&gt; CLIENT: 334 VXNlcm5hbWU6<br>
+2025-05-15 12:21:19 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-15 12:21:19 SERVER -&gt; CLIENT: 334 UGFzc3dvcmQ6<br>
+2025-05-15 12:21:19 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-15 12:21:20 SERVER -&gt; CLIENT: 235 2.7.0 Accepted<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: MAIL FROM:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:21:20 SERVER -&gt; CLIENT: 250 2.1.0 OK 71dfb90a1353d-52c68a5a7desm8793551e0c.34 - gsmtp<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: RCPT TO:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:21:20 SERVER -&gt; CLIENT: 250 2.1.5 OK 71dfb90a1353d-52c68a5a7desm8793551e0c.34 - gsmtp<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: DATA<br>
+2025-05-15 12:21:20 SERVER -&gt; CLIENT: 354 Go ahead 71dfb90a1353d-52c68a5a7desm8793551e0c.34 - gsmtp<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Date: Thu, 15 May 2025 14:21:18 +0200<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: To: Atendimento &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: From: =?UTF-8?Q?Sistema_de_Contato_-_Tabela_de_Pre=C3=A7os?= &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Reply-To: Francisco &lt;franciscosalesdeoliveira@outlook.com&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Subject: Contato via Site: Teste<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Message-ID: &lt;ccPTtzO0Uj4OV8Ge0kv6oEAJtxLLw6MEz5xrsOKlb1U@tabela.tadsbr.local&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: X-Mailer: PHPMailer 6.10.0 (https://github.com/PHPMailer/PHPMailer)<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: MIME-Version: 1.0<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Content-Type: multipart/alternative;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:  boundary=&quot;b1=_ccPTtzO0Uj4OV8Ge0kv6oEAJtxLLw6MEz5xrsOKlb1U&quot;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Content-Transfer-Encoding: 8bit<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: --b1=_ccPTtzO0Uj4OV8Ge0kv6oEAJtxLLw6MEz5xrsOKlb1U<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Content-Type: text/plain; charset=us-ascii<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Nome: Francisco<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Email: franciscosalesdeoliveira@outlook.com<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Assunto: Teste<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Mensagem:<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Teste 123<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: --b1=_ccPTtzO0Uj4OV8Ge0kv6oEAJtxLLw6MEz5xrsOKlb1U<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: Content-Type: text/html; charset=us-ascii<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:                 &lt;h2&gt;Nova mensagem de contato&lt;/h2&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Nome:&lt;/strong&gt; Francisco&lt;/p&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Email:&lt;/strong&gt; franciscosalesdeoliveira@outlook.com&lt;/p&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Assunto:&lt;/strong&gt; Teste&lt;/p&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Mensagem:&lt;/strong&gt;&lt;/p&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:                 &lt;p&gt;Teste 123&lt;/p&gt;<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER:             <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: --b1=_ccPTtzO0Uj4OV8Ge0kv6oEAJtxLLw6MEz5xrsOKlb1U--<br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: <br>
+2025-05-15 12:21:20 CLIENT -&gt; SERVER: .<br>
+2025-05-15 12:21:21 SERVER -&gt; CLIENT: 250 2.0.0 OK  1747311679 71dfb90a1353d-52c68a5a7desm8793551e0c.34 - gsmtp<br>
+2025-05-15 12:21:21 CLIENT -&gt; SERVER: QUIT<br>
+2025-05-15 12:21:21 SERVER -&gt; CLIENT: 221 2.0.0 closing connection 71dfb90a1353d-52c68a5a7desm8793551e0c.34 - gsmtp<br>
+
+
+[2025-05-16 20:53:20] Email enviado para: franciscos.oliveira.filho@gmail.com
+2025-05-16 18:53:18 SERVER -&gt; CLIENT: 220 smtp.gmail.com ESMTP 71dfb90a1353d-52dbaa5a449sm2387521e0c.32 - gsmtp<br>
+2025-05-16 18:53:18 CLIENT -&gt; SERVER: EHLO tabela.tadsbr.local<br>
+2025-05-16 18:53:18 SERVER -&gt; CLIENT: 250-smtp.gmail.com at your service, [187.73.198.198]250-SIZE 35882577250-8BITMIME250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH250-ENHANCEDSTATUSCODES250-PIPELINING250-CHUNKING250 SMTPUTF8<br>
+2025-05-16 18:53:18 CLIENT -&gt; SERVER: AUTH LOGIN<br>
+2025-05-16 18:53:18 SERVER -&gt; CLIENT: 334 VXNlcm5hbWU6<br>
+2025-05-16 18:53:18 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-16 18:53:18 SERVER -&gt; CLIENT: 334 UGFzc3dvcmQ6<br>
+2025-05-16 18:53:18 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-16 18:53:18 SERVER -&gt; CLIENT: 235 2.7.0 Accepted<br>
+2025-05-16 18:53:18 CLIENT -&gt; SERVER: MAIL FROM:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 18:53:19 SERVER -&gt; CLIENT: 250 2.1.0 OK 71dfb90a1353d-52dbaa5a449sm2387521e0c.32 - gsmtp<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: RCPT TO:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 18:53:19 SERVER -&gt; CLIENT: 250 2.1.5 OK 71dfb90a1353d-52dbaa5a449sm2387521e0c.32 - gsmtp<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: DATA<br>
+2025-05-16 18:53:19 SERVER -&gt; CLIENT: 354 Go ahead 71dfb90a1353d-52dbaa5a449sm2387521e0c.32 - gsmtp<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Date: Fri, 16 May 2025 20:53:16 +0200<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: To: Atendimento &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: From: =?UTF-8?Q?Sistema_de_Contato_-_Tabela_de_Pre=C3=A7os?= &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Reply-To: Francisco &lt;franciscosalesdeoliveira@outlook.com&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Subject: Contato via Site: Teste<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Message-ID: &lt;SCJ1ekpeEXykOalu4m07ayOlQ8cSXnTfcsXt01hgxCE@tabela.tadsbr.local&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: X-Mailer: PHPMailer 6.10.0 (https://github.com/PHPMailer/PHPMailer)<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: MIME-Version: 1.0<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Content-Type: multipart/alternative;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:  boundary=&quot;b1=_SCJ1ekpeEXykOalu4m07ayOlQ8cSXnTfcsXt01hgxCE&quot;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Content-Transfer-Encoding: 8bit<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: --b1=_SCJ1ekpeEXykOalu4m07ayOlQ8cSXnTfcsXt01hgxCE<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Content-Type: text/plain; charset=us-ascii<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Nome: Francisco<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Email: franciscosalesdeoliveira@outlook.com<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Assunto: Teste<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Mensagem:<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Mensagem de Teste para testar se o teste de email foi testado corretamente<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: --b1=_SCJ1ekpeEXykOalu4m07ayOlQ8cSXnTfcsXt01hgxCE<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: Content-Type: text/html; charset=us-ascii<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:                 &lt;h2&gt;Nova mensagem de contato&lt;/h2&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Nome:&lt;/strong&gt; Francisco&lt;/p&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Email:&lt;/strong&gt; franciscosalesdeoliveira@outlook.com&lt;/p&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Assunto:&lt;/strong&gt; Teste&lt;/p&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Mensagem:&lt;/strong&gt;&lt;/p&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:                 &lt;p&gt;Mensagem de Teste para testar se o teste de email foi testado corretamente&lt;/p&gt;<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER:             <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: --b1=_SCJ1ekpeEXykOalu4m07ayOlQ8cSXnTfcsXt01hgxCE--<br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: <br>
+2025-05-16 18:53:19 CLIENT -&gt; SERVER: .<br>
+2025-05-16 18:53:20 SERVER -&gt; CLIENT: 250 2.0.0 OK  1747421598 71dfb90a1353d-52dbaa5a449sm2387521e0c.32 - gsmtp<br>
+2025-05-16 18:53:20 CLIENT -&gt; SERVER: QUIT<br>
+2025-05-16 18:53:20 SERVER -&gt; CLIENT: 221 2.0.0 closing connection 71dfb90a1353d-52dbaa5a449sm2387521e0c.32 - gsmtp<br>
+
+
+[2025-05-16 21:08:06] Email enviado para: franciscos.oliveira.filho@gmail.com
+2025-05-16 19:08:03 SERVER -&gt; CLIENT: 220 smtp.gmail.com ESMTP 71dfb90a1353d-52dba96b122sm2440791e0c.25 - gsmtp<br>
+2025-05-16 19:08:03 CLIENT -&gt; SERVER: EHLO tabela.tadsbr.local<br>
+2025-05-16 19:08:04 SERVER -&gt; CLIENT: 250-smtp.gmail.com at your service, [187.73.198.198]250-SIZE 35882577250-8BITMIME250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH250-ENHANCEDSTATUSCODES250-PIPELINING250-CHUNKING250 SMTPUTF8<br>
+2025-05-16 19:08:04 CLIENT -&gt; SERVER: AUTH LOGIN<br>
+2025-05-16 19:08:04 SERVER -&gt; CLIENT: 334 VXNlcm5hbWU6<br>
+2025-05-16 19:08:04 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-16 19:08:04 SERVER -&gt; CLIENT: 334 UGFzc3dvcmQ6<br>
+2025-05-16 19:08:04 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-16 19:08:04 SERVER -&gt; CLIENT: 235 2.7.0 Accepted<br>
+2025-05-16 19:08:04 CLIENT -&gt; SERVER: MAIL FROM:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:08:05 SERVER -&gt; CLIENT: 250 2.1.0 OK 71dfb90a1353d-52dba96b122sm2440791e0c.25 - gsmtp<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: RCPT TO:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:08:05 SERVER -&gt; CLIENT: 250 2.1.5 OK 71dfb90a1353d-52dba96b122sm2440791e0c.25 - gsmtp<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: DATA<br>
+2025-05-16 19:08:05 SERVER -&gt; CLIENT: 354 Go ahead 71dfb90a1353d-52dba96b122sm2440791e0c.25 - gsmtp<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Date: Fri, 16 May 2025 21:08:03 +0200<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: To: Atendimento &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: From: =?UTF-8?Q?Sistema_de_Contato_-_Tabela_de_Pre=C3=A7os?= &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Reply-To: Francisco &lt;franciscosalesdeoliveira@outlook.com&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Subject: Contato via Site: Teste<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Message-ID: &lt;7uVrs10pYX5Ycuu7acfEQrhQLe5RUBfXCBGYgismxNo@tabela.tadsbr.local&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: X-Mailer: PHPMailer 6.10.0 (https://github.com/PHPMailer/PHPMailer)<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: MIME-Version: 1.0<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Content-Type: multipart/alternative;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:  boundary=&quot;b1=_7uVrs10pYX5Ycuu7acfEQrhQLe5RUBfXCBGYgismxNo&quot;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Content-Transfer-Encoding: 8bit<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: --b1=_7uVrs10pYX5Ycuu7acfEQrhQLe5RUBfXCBGYgismxNo<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Content-Type: text/plain; charset=us-ascii<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Nome: Francisco<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Email: franciscosalesdeoliveira@outlook.com<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Assunto: Teste<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Mensagem:<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Mensagem de Teste para testar se o teste de email foi testado corretamente<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: --b1=_7uVrs10pYX5Ycuu7acfEQrhQLe5RUBfXCBGYgismxNo<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: Content-Type: text/html; charset=us-ascii<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:                 &lt;h2&gt;Nova mensagem de contato&lt;/h2&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Nome:&lt;/strong&gt; Francisco&lt;/p&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Email:&lt;/strong&gt; franciscosalesdeoliveira@outlook.com&lt;/p&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Assunto:&lt;/strong&gt; Teste&lt;/p&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Mensagem:&lt;/strong&gt;&lt;/p&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:                 &lt;p&gt;Mensagem de Teste para testar se o teste de email foi testado corretamente&lt;/p&gt;<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER:             <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: --b1=_7uVrs10pYX5Ycuu7acfEQrhQLe5RUBfXCBGYgismxNo--<br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:08:05 CLIENT -&gt; SERVER: .<br>
+2025-05-16 19:08:06 SERVER -&gt; CLIENT: 250 2.0.0 OK  1747422484 71dfb90a1353d-52dba96b122sm2440791e0c.25 - gsmtp<br>
+2025-05-16 19:08:06 CLIENT -&gt; SERVER: QUIT<br>
+2025-05-16 19:08:06 SERVER -&gt; CLIENT: 221 2.0.0 closing connection 71dfb90a1353d-52dba96b122sm2440791e0c.25 - gsmtp<br>
+
+
+[2025-05-16 21:12:54] Email enviado para: franciscos.oliveira.filho@gmail.com
+2025-05-16 19:12:52 SERVER -&gt; CLIENT: 220 smtp.gmail.com ESMTP ada2fe7eead31-4dfa668cdeesm2344357137.6 - gsmtp<br>
+2025-05-16 19:12:52 CLIENT -&gt; SERVER: EHLO tabela.tadsbr.local<br>
+2025-05-16 19:12:52 SERVER -&gt; CLIENT: 250-smtp.gmail.com at your service, [187.73.198.198]250-SIZE 35882577250-8BITMIME250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH250-ENHANCEDSTATUSCODES250-PIPELINING250-CHUNKING250 SMTPUTF8<br>
+2025-05-16 19:12:52 CLIENT -&gt; SERVER: AUTH LOGIN<br>
+2025-05-16 19:12:52 SERVER -&gt; CLIENT: 334 VXNlcm5hbWU6<br>
+2025-05-16 19:12:52 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-16 19:12:52 SERVER -&gt; CLIENT: 334 UGFzc3dvcmQ6<br>
+2025-05-16 19:12:52 CLIENT -&gt; SERVER: [credentials hidden]<br>
+2025-05-16 19:12:53 SERVER -&gt; CLIENT: 235 2.7.0 Accepted<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: MAIL FROM:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:12:53 SERVER -&gt; CLIENT: 250 2.1.0 OK ada2fe7eead31-4dfa668cdeesm2344357137.6 - gsmtp<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: RCPT TO:&lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:12:53 SERVER -&gt; CLIENT: 250 2.1.5 OK ada2fe7eead31-4dfa668cdeesm2344357137.6 - gsmtp<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: DATA<br>
+2025-05-16 19:12:53 SERVER -&gt; CLIENT: 354 Go ahead ada2fe7eead31-4dfa668cdeesm2344357137.6 - gsmtp<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Date: Fri, 16 May 2025 21:12:51 +0200<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: To: Atendimento &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: From: =?UTF-8?Q?Sistema_de_Contato_-_Tabela_de_Pre=C3=A7os?= &lt;franciscos.oliveira.filho@gmail.com&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Reply-To: Francisco &lt;franciscosalesdeoliveira@outlook.com&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Subject: Contato via Site: teste<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Message-ID: &lt;LTnjKLVAJ8LMUuXcCCePpJgDnmlSyjhqQ8WTivpTKY@tabela.tadsbr.local&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: X-Mailer: PHPMailer 6.10.0 (https://github.com/PHPMailer/PHPMailer)<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: MIME-Version: 1.0<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Content-Type: multipart/alternative;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:  boundary=&quot;b1=_LTnjKLVAJ8LMUuXcCCePpJgDnmlSyjhqQ8WTivpTKY&quot;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Content-Transfer-Encoding: 8bit<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: --b1=_LTnjKLVAJ8LMUuXcCCePpJgDnmlSyjhqQ8WTivpTKY<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Content-Type: text/plain; charset=us-ascii<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Nome: Francisco<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Email: franciscosalesdeoliveira@outlook.com<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Assunto: teste<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Mensagem:<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: teste<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: --b1=_LTnjKLVAJ8LMUuXcCCePpJgDnmlSyjhqQ8WTivpTKY<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: Content-Type: text/html; charset=us-ascii<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:                 &lt;h2&gt;Nova mensagem de contato&lt;/h2&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Nome:&lt;/strong&gt; Francisco&lt;/p&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Email:&lt;/strong&gt; franciscosalesdeoliveira@outlook.com&lt;/p&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Assunto:&lt;/strong&gt; teste&lt;/p&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:                 &lt;p&gt;&lt;strong&gt;Mensagem:&lt;/strong&gt;&lt;/p&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:                 &lt;p&gt;teste&lt;/p&gt;<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER:             <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: --b1=_LTnjKLVAJ8LMUuXcCCePpJgDnmlSyjhqQ8WTivpTKY--<br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: <br>
+2025-05-16 19:12:53 CLIENT -&gt; SERVER: .<br>
+2025-05-16 19:12:54 SERVER -&gt; CLIENT: 250 2.0.0 OK  1747422772 ada2fe7eead31-4dfa668cdeesm2344357137.6 - gsmtp<br>
+2025-05-16 19:12:54 CLIENT -&gt; SERVER: QUIT<br>
+2025-05-16 19:12:54 SERVER -&gt; CLIENT: 221 2.0.0 closing connection ada2fe7eead31-4dfa668cdeesm2344357137.6 - gsmtp<br>
+
+

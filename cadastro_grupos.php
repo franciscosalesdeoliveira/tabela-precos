@@ -233,157 +233,165 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
                 max-width: 95%;
             }
         }
+
+        /* Adicionando espaço para o footer */
+        .main-content {
+            min-height: calc(100vh - 160px);
+            padding-bottom: 20px;
+        }
     </style>
 </head>
 
 <body>
-
-    <!-- Mensagens de feedback -->
-    <?php if (!empty($mensagem)): ?>
-        <div class="alert-container">
-            <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
-                <?= htmlspecialchars($mensagem) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <!-- Formulário para cadastrar grupos -->
-
-    <div class="form-container mt-3">
-        <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: black;">Cadastro de Grupos</h2>
-        <form method="POST" class="row g-3 align-items-end">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-
-            <div class="col-md-6">
-                <label class="form-label" style="font-weight: bold; color: black;" for="grupo">Nome do Grupo:</label>
-                <input class="form-control" type="text" name="grupo" id="grupo" required>
-            </div>
-
-            <div class="col-md-2">
-                <label class="form-label" style="font-weight: bold; color: black;">Status:</label>
-                <select class="form-select" name="status" id="status">
-                    <option value="ativo" selected>Ativo</option>
-                    <option value="inativo">Inativo</option>
-                </select>
-            </div>
-
-            <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-success flex-grow-1" type="submit">Cadastrar</button>
-                <button class="btn btn-warning flex-grow-1" type="reset">Limpar</button>
-                <a class="btn btn-primary flex-grow-1" href="index.php">Início</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Formulário de pesquisa -->
-    <div class="table-container">
-        <div class="row mb-3 mt-3">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <input class="form-control" type="search" id="pesquisar" placeholder="Pesquisar..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
-                    <button onclick="searchData()" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
-                        </svg>
-                    </button>
+    <div class="main-content">
+        <!-- Mensagens de feedback -->
+        <?php if (!empty($mensagem)): ?>
+            <div class="alert-container">
+                <div class="alert alert-<?= $tipo_mensagem ?> alert-dismissible fade show" role="alert">
+                    <?= htmlspecialchars($mensagem) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="btn-group float-end" role="group">
-                    <a href="<?= urlFiltroStatus('todos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'todos' ? 'active' : '' ?>">Todos</a>
-                    <a href="<?= urlFiltroStatus('ativos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'ativos' ? 'active' : '' ?>">Ativos</a>
-                    <a href="<?= urlFiltroStatus('inativos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'inativos' ? 'active' : '' ?>">Inativos</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Listagem de Grupos -->
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('id', $ordem_coluna, $ordem_direcao) ?>'">
-                            ID <?= iconeOrdenacao('id', $ordem_coluna, $ordem_direcao) ?>
-                        </th>
-                        <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>'">
-                            Nome <?= iconeOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>
-                        </th>
-                        <th class="text-center">Status</th>
-                        <th class="text-center">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($grupos) > 0): ?>
-                        <?php foreach ($grupos as $grupo): ?>
-                            <?php $ehAtivo = isGrupoAtivo($grupo); ?>
-                            <tr class="<?= $ehAtivo ? '' : 'table-secondary' ?>">
-                                <td class="text-center"><?= htmlspecialchars($grupo['id']) ?></td>
-                                <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
-                                <td class="text-center">
-                                    <span class="badge <?= $ehAtivo ? 'bg-success' : 'bg-danger' ?>">
-                                        <?= $ehAtivo ? 'Ativo' : 'Inativo' ?>
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <a class="btn btn-primary btn-sm" href="editar_grupo.php?id=<?= $grupo['id'] ?>">
-                                            <i class="bi bi-pencil"></i> Editar
-                                        </a>
-                                        <?php
-                                        $acaoCor = $ehAtivo ? 'warning' : 'success';
-                                        $acaoIcone = $ehAtivo ? 'bi-toggle-off' : 'bi-toggle-on';
-                                        $acaoTexto = $ehAtivo ? 'Inativar' : 'Ativar';
-                                        $acaoParamtr = $ehAtivo ? 'inativar' : 'ativar';
-                                        ?>
-                                        <a class="btn btn-<?= $acaoCor ?> btn-sm"
-                                            href="toggle_status_grupo.php?id=<?= $grupo['id'] ?>&acao=<?= $acaoParamtr ?>">
-                                            <i class="bi <?= $acaoIcone ?>"></i> <?= $acaoTexto ?>
-                                        </a>
-                                        <button type="button" class="btn btn-danger btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#confirmarExclusao"
-                                            data-id="<?= $grupo['id'] ?>"
-                                            data-nome="<?= htmlspecialchars($grupo['nome']) ?>">
-                                            <i class="bi bi-trash"></i> Excluir
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="4" class="text-center">Nenhum grupo encontrado</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Paginação -->
-        <?php if ($total_paginas > 1): ?>
-            <nav aria-label="Navegação de páginas">
-                <ul class="pagination">
-                    <li class="page-item <?= ($pagina_atual <= 1) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="<?= urlPaginacao($pagina_atual - 1) ?>" aria-label="Anterior">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-
-                    <?php for ($i = max(1, $pagina_atual - 2); $i <= min($total_paginas, $pagina_atual + 2); $i++): ?>
-                        <li class="page-item <?= ($i == $pagina_atual) ? 'active' : '' ?>">
-                            <a class="page-link" href="<?= urlPaginacao($i) ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-
-                    <li class="page-item <?= ($pagina_atual >= $total_paginas) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="<?= urlPaginacao($pagina_atual + 1) ?>" aria-label="Próximo">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
         <?php endif; ?>
+
+        <!-- Formulário para cadastrar grupos -->
+        <div class="form-container mt-3">
+            <h2 class="text-center mb-4" style="font-size: 24px; font-weight: bold; color: black;">Cadastro de Grupos</h2>
+            <form method="POST" class="row g-3 align-items-end">
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight: bold; color: black;" for="grupo">Nome do Grupo:</label>
+                    <input class="form-control" type="text" name="grupo" id="grupo" required>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label" style="font-weight: bold; color: black;">Status:</label>
+                    <select class="form-select" name="status" id="status">
+                        <option value="ativo" selected>Ativo</option>
+                        <option value="inativo">Inativo</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 d-flex gap-2">
+                    <button class="btn btn-success flex-grow-1" type="submit">Cadastrar</button>
+                    <button class="btn btn-warning flex-grow-1" type="reset">Limpar</button>
+                    <a href="index.php" class="btn btn-primary">
+                        <i class="fas fa-home me-1"></i> Página Inicial
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Formulário de pesquisa -->
+        <div class="table-container">
+            <div class="row mb-3 mt-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input class="form-control" type="search" id="pesquisar" placeholder="Pesquisar..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+                        <button onclick="searchData()" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="btn-group float-end" role="group">
+                        <a href="<?= urlFiltroStatus('todos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'todos' ? 'active' : '' ?>">Todos</a>
+                        <a href="<?= urlFiltroStatus('ativos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'ativos' ? 'active' : '' ?>">Ativos</a>
+                        <a href="<?= urlFiltroStatus('inativos') ?>" class="btn btn-outline-primary btn-sm <?= $filtro_status === 'inativos' ? 'active' : '' ?>">Inativos</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listagem de Grupos -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('id', $ordem_coluna, $ordem_direcao) ?>'">
+                                ID <?= iconeOrdenacao('id', $ordem_coluna, $ordem_direcao) ?>
+                            </th>
+                            <th class="text-center sorting-header" onclick="window.location.href='<?= urlOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>'">
+                                Nome <?= iconeOrdenacao('nome', $ordem_coluna, $ordem_direcao) ?>
+                            </th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (count($grupos) > 0): ?>
+                            <?php foreach ($grupos as $grupo): ?>
+                                <?php $ehAtivo = isGrupoAtivo($grupo); ?>
+                                <tr class="<?= $ehAtivo ? '' : 'table-secondary' ?>">
+                                    <td class="text-center"><?= htmlspecialchars($grupo['id']) ?></td>
+                                    <td class="text-center"><?= htmlspecialchars($grupo['nome']) ?></td>
+                                    <td class="text-center">
+                                        <span class="badge <?= $ehAtivo ? 'bg-success' : 'bg-danger' ?>">
+                                            <?= $ehAtivo ? 'Ativo' : 'Inativo' ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <a class="btn btn-primary btn-sm" href="editar_grupo.php?id=<?= $grupo['id'] ?>">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </a>
+                                            <?php
+                                            $acaoCor = $ehAtivo ? 'warning' : 'success';
+                                            $acaoIcone = $ehAtivo ? 'bi-toggle-off' : 'bi-toggle-on';
+                                            $acaoTexto = $ehAtivo ? 'Inativar' : 'Ativar';
+                                            $acaoParamtr = $ehAtivo ? 'inativar' : 'ativar';
+                                            ?>
+                                            <a class="btn btn-<?= $acaoCor ?> btn-sm"
+                                                href="toggle_status_grupo.php?id=<?= $grupo['id'] ?>&acao=<?= $acaoParamtr ?>">
+                                                <i class="bi <?= $acaoIcone ?>"></i> <?= $acaoTexto ?>
+                                            </a>
+                                            <button type="button" class="btn btn-danger btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#confirmarExclusao"
+                                                data-id="<?= $grupo['id'] ?>"
+                                                data-nome="<?= htmlspecialchars($grupo['nome']) ?>">
+                                                <i class="bi bi-trash"></i> Excluir
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum grupo encontrado</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            <?php if ($total_paginas > 1): ?>
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination">
+                        <li class="page-item <?= ($pagina_atual <= 1) ? 'disabled' : '' ?>">
+                            <a class="page-link" href="<?= urlPaginacao($pagina_atual - 1) ?>" aria-label="Anterior">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+
+                        <?php for ($i = max(1, $pagina_atual - 2); $i <= min($total_paginas, $pagina_atual + 2); $i++): ?>
+                            <li class="page-item <?= ($i == $pagina_atual) ? 'active' : '' ?>">
+                                <a class="page-link" href="<?= urlPaginacao($i) ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor; ?>
+
+                        <li class="page-item <?= ($pagina_atual >= $total_paginas) ? 'disabled' : '' ?>">
+                            <a class="page-link" href="<?= urlPaginacao($pagina_atual + 1) ?>" aria-label="Próximo">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Modal de confirmação de exclusão -->
@@ -445,10 +453,10 @@ function iconeOrdenacao($coluna, $ordem_atual, $direcao_atual)
             });
         });
     </script>
+
+    <?php
+    require_once 'footer.php';
+    ?>
 </body>
 
 </html>
-
-<?php
-require_once 'footer.php';
-?>

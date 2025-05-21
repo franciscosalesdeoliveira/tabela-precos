@@ -5,8 +5,11 @@ require_once 'header.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
 
 $mensagem_status = '';
+$debug_output = '';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nome = htmlspecialchars($_POST['nome'] ?? '');
     $email = htmlspecialchars($_POST['email'] ?? '');
@@ -30,18 +33,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $mail = new PHPMailer(true);
 
+            // Ativar debug
+            $mail->SMTPDebug = SMTP::DEBUG_SERVER; // Ativa saída de debug detalhada
+            // Capturar a saída em vez de imprimir
+            ob_start();
+
             // Configurações do servidor SMTP
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com'; // Ex: smtp.gmail.com, smtp.office365.com
             $mail->SMTPAuth = true;
+
+            // IMPORTANTE: Altere para o seu email
             $mail->Username = 'franciscos.oliveira.filho@gmail.com'; // Seu email completo
             $mail->Password = 'wdol lqeb rygx qfqn'; // Senha do email ou senha de app
+
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL/TLS
             $mail->Port = 465; // Porta do SMTP (465 para SSL, 587 para TLS)
+            $mail->CharSet = 'UTF-8'; // Garante que acentos e caracteres especiais sejam exibidos corretamente
 
             // Remetente e destinatário
-            $mail->setFrom('nao-responder@seusite.com', 'Sistema de Contato');
-            $mail->addAddress('contato@seusite.com', 'Nome do Destinatário');
+            // IMPORTANTE: Altere para o seu domínio e email
+            $mail->setFrom($mail->Username, 'Sistema de Contato - Tabela de Preços');
+            $mail->addAddress($mail->Username, 'Atendimento'); // Altera para o email que recebe as mensagens
             $mail->addReplyTo($email, $nome);
 
             // Conteúdo do email
@@ -58,9 +71,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $mail->AltBody = "Nome: $nome\nEmail: $email\nAssunto: $assunto\nMensagem:\n$mensagem";
 
             $mail->send();
+            $debug_output = ob_get_clean(); // Captura a saída de debug
+
+            // Registrar informações de debug em um arquivo de log
+            file_put_contents('email_log.txt', date('[Y-m-d H:i:s] ') . "Email enviado para: {$mail->Username}\n" . $debug_output . "\n\n", FILE_APPEND);
+
             $mensagem_status = '<div class="alert-success">Mensagem enviada com sucesso! Entraremos em contato em breve.</div>';
+
+            // Limpar os dados do formulário após o envio bem-sucedido
+            $_POST = array();
         } catch (Exception $e) {
-            $mensagem_status = '<div class="alert-danger">Erro ao enviar mensagem. Erro: ' . $mail->ErrorInfo . '</div>';
+            $debug_output = ob_get_clean(); // Captura a saída de debug em caso de erro
+
+            // Registrar erro em um arquivo de log
+            file_put_contents('email_error_log.txt', date('[Y-m-d H:i:s] ') . "Erro ao enviar email: {$mail->ErrorInfo}\n" . $debug_output . "\n\n", FILE_APPEND);
+
+            $mensagem_status = '<div class="alert-danger">Erro ao enviar mensagem. Por favor, tente novamente mais tarde ou entre em contato via WhatsApp.</div>';
+
+            // Mostra detalhes do erro apenas em ambiente de desenvolvimento
+            if ($_SERVER['REMOTE_ADDR'] == '127.0.0.1' || $_SERVER['REMOTE_ADDR'] == '::1') {
+                $mensagem_status .= '<div class="alert-danger"><strong>Detalhes do erro (apenas dev):</strong> ' . $mail->ErrorInfo . '</div>';
+            }
         }
     }
 }
@@ -105,14 +136,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
+        }
+
+        .page-wrapper {
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
             padding: 20px;
+            width: 100%;
         }
 
         .contact-container {
@@ -122,8 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             overflow: hidden;
             width: 100%;
             max-width: 900px;
-            display: flex;
-            flex-direction: column;
+            margin: 0 auto;
             animation: fadeIn 0.6s ease;
         }
 
@@ -160,11 +203,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: block;
             width: calc(100% + 1.3px);
             height: 46px;
+            transform: scaleY(-1);
         }
 
         .contact-wave .shape-fill {
             fill: #FFFFFF;
         }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
 
         .contact-content {
             padding: 40px 30px;
@@ -391,79 +445,103 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 width: 100%;
             }
         }
+
+        footer {
+            text-align: center;
+        }
+
+        footer .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px 0;
+        }
     </style>
 </head>
 
 <body>
-    <div class="contact-container">
-        <div class="contact-header">
-            <h1 class="contact-title">Fale Conosco</h1>
-            <p class="contact-subtitle">Estamos à disposição para ajudar você</p>
-            <div class="contact-wave">
-                <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path>
-                </svg>
-            </div>
-        </div>
-
-        <div class="contact-content">
-            <?php echo $mensagem_status; ?>
-
-            <div class="contact-options">
-                <div class="contact-form-container">
-                    <h2 class="section-title">Envie sua mensagem</h2>
-
-                    <form method="post" action="">
-                        <div class="form-group">
-                            <label for="nome" class="form-label">Nome</label>
-                            <input type="text" id="nome" name="nome" class="form-control" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="email" class="form-label">E-mail</label>
-                            <input type="email" id="email" name="email" class="form-control" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="assunto" class="form-label">Assunto</label>
-                            <input type="text" id="assunto" name="assunto" class="form-control" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="mensagem" class="form-label">Mensagem</label>
-                            <textarea id="mensagem" name="mensagem" class="form-control" required></textarea>
-                        </div>
-
-                        <button type="submit" class="btn btn-block">Enviar Mensagem</button>
-                    </form>
-                </div>
-
-                <div class="whatsapp-container">
-                    <h2 class="section-title">Atendimento via WhatsApp</h2>
-                    <p>Precisa de ajuda imediata? Entre em contato conosco pelo WhatsApp para um atendimento rápido e personalizado.</p>
-
-                    <a href="https://wa.me/5515981813900" class="whatsapp-button" target="_blank">
-                        <i class="fab fa-whatsapp"></i> Iniciar Conversa
-                    </a>
-
-                    <div class="whatsapp-number">
-                        <i class="fas fa-phone"></i> (15) 98181-3900
-                    </div>
-
-                    <div class="whatsapp-hours">
-                        <h4><i class="far fa-clock"></i> Horários de Atendimento</h4>
-                        <p>Segunda à Sexta: 08:00 - 18:00</p>
-                        <p>Sábado: 09:00 - 12:00</p>
-                        <p>Domingo e Feriados: Fechado</p>
+    <div class="page-wrapper">
+        <div class="main-content">
+            <div class="contact-container">
+                <div class="contact-header">
+                    <h1 class="contact-title">Fale Conosco</h1>
+                    <p class="contact-subtitle">Estamos à disposição para ajudar você</p>
+                    <div class="contact-wave">
+                        <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path>
+                        </svg>
                     </div>
                 </div>
-            </div>
 
-            <a href="index.php" class="back-link">
-                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
-            </a>
+                <div class="contact-content">
+                    <?php echo $mensagem_status; ?>
+
+                    <div class="contact-options">
+                        <div class="contact-form-container">
+                            <h2 class="section-title">Envie sua mensagem</h2>
+
+                            <form method="post" action="">
+                                <div class="form-group">
+                                    <label for="nome" class="form-label">Nome</label>
+                                    <input type="text" id="nome" name="nome" class="form-control" required value="<?php echo isset($_POST['nome']) ? htmlspecialchars($_POST['nome']) : ''; ?>">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="email" class="form-label">E-mail</label>
+                                    <input type="email" id="email" name="email" class="form-control" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="assunto" class="form-label">Assunto</label>
+                                    <input type="text" id="assunto" name="assunto" class="form-control" required value="<?php echo isset($_POST['assunto']) ? htmlspecialchars($_POST['assunto']) : ''; ?>">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="mensagem" class="form-label">Mensagem</label>
+                                    <textarea id="mensagem" name="mensagem" class="form-control" required><?php echo isset($_POST['mensagem']) ? htmlspecialchars($_POST['mensagem']) : ''; ?></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-block">Enviar Mensagem</button>
+                            </form>
+                        </div>
+
+                        <div class="whatsapp-container">
+
+                            <h2 class="section-title">Atendimento via WhatsApp</h2>
+                            <p>Precisa de ajuda imediata? Entre em contato conosco pelo WhatsApp para um atendimento rápido e personalizado.</p>
+
+                            <a href="https://wa.me/5515981813900" class="whatsapp-button" target="_blank">
+                                <i class="fab fa-whatsapp"></i> Iniciar Conversa
+                            </a>
+
+                            <div class="whatsapp-number">
+                                <i class="fas fa-phone"></i> (15) 98181-3900
+                            </div>
+
+                            <div class="whatsapp-hours">
+                                <h4><i class="far fa-clock"></i> Horários de Atendimento</h4>
+                                <p>Segunda à Sexta: 08:00 - 18:00</p>
+                                <p>Sábado: 09:00 - 12:00</p>
+                                <p>Domingo e Feriados: Fechado</p>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div>
+                        <a href="index.php" class="btn btn-primary">
+                            <i class="fas fa-home me-1"></i> Página Inicial
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <footer>
+        <?php require_once 'footer.php'; ?>
+    </footer>
+
 </body>
 
 </html>
