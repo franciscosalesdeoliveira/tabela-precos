@@ -176,7 +176,7 @@ $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <!-- Formulário de Cadastro no Topo -->
+        <!-- Formulário de Cadastro -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="form-section">

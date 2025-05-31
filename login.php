@@ -103,7 +103,7 @@ include_once 'connection.php';
             <br><br>
             <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
             <br><br>
-            <a href="#" type="submit">Acessar</a>
+            <a href="#" type="submit"> Acessar</a>
     </div>
     c
 </body>
