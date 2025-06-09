@@ -31,6 +31,7 @@ require_once 'header.php';
             --gray-200: #e9ecef;
             --gray-300: #dee2e6;
             --gray-800: #343a40;
+            --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
         }
 
         * {
@@ -236,6 +237,12 @@ require_once 'header.php';
                 grid-template-columns: 1fr;
             }
         }
+
+        .stat-card:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: var(--shadow-hover) !important;
+            transition: all 0.3s ease !important;
+        }
     </style>
 </head>
 
@@ -253,65 +260,77 @@ require_once 'header.php';
 
         <div class="dashboard-content">
             <div class="menu-grid">
-                <a href="tabela_precos.php" target="_blank" class="menu-card">
-                    <div class="menu-icon">
-                        <i class="fas fa-table"></i>
-                    </div>
-                    <div class="menu-content">
-                        <h3 class="menu-title">Tabela de Preços</h3>
-                        <p class="menu-description">Visualize e gerencie todos os preços cadastrados no sistema</p>
-                    </div>
-                </a>
+                <div class="stat-card">
+                    <a href="tabela_precos.php" target="_blank" class="menu-card">
+                        <div class="menu-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <div class="menu-content">
+                            <h3 class="menu-title">Tabela de Preços</h3>
+                            <p class="menu-description">Visualize e gerencie todos os preços cadastrados no sistema</p>
+                        </div>
+                    </a>
+                </div>
 
-                <a href="cadastro_grupos.php" class="menu-card">
-                    <div class="menu-icon">
-                        <i class="fas fa-layer-group"></i>
-                    </div>
-                    <div class="menu-content">
-                        <h3 class="menu-title">Cadastro de Grupos</h3>
-                        <p class="menu-description">Crie e organize grupos para classificar seus produtos</p>
-                    </div>
-                </a>
+                <div class="stat-card">
+                    <a href="cadastro_grupos.php" class="menu-card">
+                        <div class="menu-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="menu-content">
+                            <h3 class="menu-title">Cadastro de Grupos</h3>
+                            <p class="menu-description">Crie e organize grupos para classificar seus produtos</p>
+                        </div>
+                    </a>
+                </div>
 
-                <a href="cadastro_produtos.php" class="menu-card">
-                    <div class="menu-icon">
-                        <i class="fas fa-box"></i>
-                    </div>
-                    <div class="menu-content">
-                        <h3 class="menu-title">Cadastro de Produtos</h3>
-                        <p class="menu-description">Adicione novos produtos e gerencie os existentes</p>
-                    </div>
-                </a>
+                <div class="stat-card">
+                    <a href="cadastro_produtos.php" class="menu-card">
+                        <div class="menu-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="menu-content">
+                            <h3 class="menu-title">Cadastro de Produtos</h3>
+                            <p class="menu-description">Adicione novos produtos e gerencie os existentes</p>
+                        </div>
+                    </a>
+                </div>
 
-                <a href="excel.php" class="menu-card">
-                    <div class="menu-icon">
-                        <i class="fas fa-file-import"></i>
-                    </div>
-                    <div class="menu-content">
-                        <h3 class="menu-title">Importar CSV</h3>
-                        <p class="menu-description">Importe produtos em massa a partir de arquivos CSV</p>
-                    </div>
-                </a>
+                <div class="stat-card">
+                    <a href="excel.php" class="menu-card">
+                        <div class="menu-icon">
+                            <i class="fas fa-file-import"></i>
+                        </div>
+                        <div class="menu-content">
+                            <h3 class="menu-title">Importar CSV</h3>
+                            <p class="menu-description">Importe produtos em massa a partir de arquivos CSV</p>
+                        </div>
+                    </a>
+                </div>
 
-                <a href="configuracoes.php" class="menu-card">
-                    <div class="menu-icon">
-                        <i class="fas fa-cogs"></i>
-                    </div>
-                    <div class="menu-content">
-                        <h3 class="menu-title">Configurações</h3>
-                        <p class="menu-description">Personalize as configurações da sua tabela de preços</p>
-                    </div>
-                </a>
+                <div class="stat-card">
+                    <a href="configuracoes.php" class="menu-card">
+                        <div class="menu-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="menu-content">
+                            <h3 class="menu-title">Configurações</h3>
+                            <p class="menu-description">Personalize as configurações da sua tabela de preços</p>
+                        </div>
+                    </a>
+                </div>
 
-                <a href="contato.php" class="menu-card">
-                    <div class="menu-icon">
-                        <i class="fas fa-headset"></i>
-                    </div>
-                    <div class="menu-content">
-                        <h3 class="menu-title">Fale Conosco</h3>
-                        <p class="menu-description">Entre em contato para suporte e atendimento</p>
-                    </div>
-                </a>
+                <div class="stat-card">
+                    <a href="contato.php" class="menu-card">
+                        <div class="menu-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="menu-content">
+                            <h3 class="menu-title">Fale Conosco</h3>
+                            <p class="menu-description">Entre em contato para suporte e atendimento</p>
+                        </div>
+                    </a>
+                </div>
             </div>
 
             <div class="footer">

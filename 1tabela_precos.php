@@ -1,11 +1,34 @@
 <?php
+// Proteção de autenticação - deve ser a primeira coisa no arquivo
+session_start();
+
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_uuid'])) {
+    // Se não estiver logado, redirecionar para o login
+    header("Location: login.php");
+    exit;
+}
+
+// Verificar se a sessão não expirou (opcional - definir tempo limite)
+$tempo_limite_sessao = 8 * 60 * 60; // 8 horas em segundos
+if (isset($_SESSION['login_time']) && (time() - $_SESSION['login_time'] > $tempo_limite_sessao)) {
+    // Sessão expirada, limpar e redirecionar
+    session_unset();
+    session_destroy();
+    header("Location: login.php?msg=sessao_expirada");
+    exit;
+}
+
+// Atualizar o tempo da sessão (renovar automaticamente)
+$_SESSION['login_time'] = time();
+
 $titulo = "Tabela de Preços";
-require_once 'header.php';
+// require_once 'header.php';
 require_once 'connection.php';
+
 
 // Verificar se é uma atualização via AJAX
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
-
 
 // Configurações da tabela
 $limiteGrupo = isset($_GET['limite']) && is_numeric($_GET['limite']) ? (int)$_GET['limite'] : 5;
@@ -145,7 +168,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             }
 
             .tabela-grande {
-                max-height: 65vh;
+                max-height: 95vh;
                 overflow-y: auto;
                 scrollbar-width: thin;
                 scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
@@ -177,7 +200,8 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             .tabela-grande th {
                 position: sticky;
                 top: 0;
-                z-index: 10;
+                z-index: 999;
+
             }
 
             .tabela-grande td {
@@ -218,52 +242,65 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 </head>
 
 <body class="<?= $estiloAtual['background'] ?> <?= $estiloAtual['text'] ?>">
-    <?php if (!$isAjax): ?>
-        <header class="<?= $estiloAtual['header_bg'] ?> text-center py-3">
-            <h1 class="display-4"><?= htmlspecialchars($titulo) ?></h1>
-        </header>
-    <?php endif; ?>
-
 
 
     <div class="container-fluid p-2">
         <?php
         try {
-            $dbType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-            // Verificar se a coluna updated_at existe
-            $temColuna = false;
-            try {
-                $checkStmt = $pdo->prepare("SELECT * FROM produtos LIMIT 1");
-                $checkStmt->execute();
-                $colunas = [];
-                for ($i = 0; $i < $checkStmt->columnCount(); $i++) {
-                    $colMeta = $checkStmt->getColumnMeta($i);
-                    $colunas[] = strtolower($colMeta['name']);
-                }
-                $temColuna = in_array('updated_at', $colunas);
-            } catch (Exception $e) {
-                $temColuna = false;
+            // Verificar se $pdo está definido e é uma instância válida
+            if (!isset($pdo) || !($pdo instanceof PDO)) {
+                throw new Exception("Conexão PDO não está disponível");
             }
 
-            // Montar a consulta SQL com filtro de grupo se necessário
-            if ($dbType == 'pgsql') {
-                $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
-                      p.id as produto_id, g.id as grupo_id" .
-                    ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
-               FROM produtos p
-               JOIN grupos g ON p.grupo_id = g.id";
-            } else {
-                $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
-                      p.id as produto_id, g.id as grupo_id" .
-                    ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
-               FROM produtos p
-               JOIN grupos g ON p.grupo_id = g.id";
+            $dbType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+            // Função melhorada para verificar se coluna existe
+            function colunaExiste($pdo, $tabela, $coluna, $dbType)
+            {
+                try {
+                    if ($dbType == 'pgsql') {
+                        $sql = "SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = ? AND column_name = ?";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute([$tabela, $coluna]);
+                        return $stmt->rowCount() > 0;
+                    } else {
+                        // MySQL
+                        $sql = "SHOW COLUMNS FROM `{$tabela}` LIKE ?";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute([$coluna]);
+                        return $stmt->rowCount() > 0;
+                    }
+                } catch (Exception $e) {
+                    return false;
+                }
+            }
+
+            // Verificar se as colunas 'ativo' existem nas tabelas
+            $temColunaAtivoProdutos = colunaExiste($pdo, 'produtos', 'ativo', $dbType);
+            $temColunaAtivoGrupos = colunaExiste($pdo, 'grupos', 'ativo', $dbType);
+            $temColuna = colunaExiste($pdo, 'produtos', 'updated_at', $dbType);
+
+            // Montar a consulta SQL
+            $sql = "SELECT p.nome as produto, p.preco, g.nome as grupo, 
+            p.id as produto_id, g.id as grupo_id" .
+                ($temColuna ? ", p.updated_at as ultima_atualizacao" : ", NULL as ultima_atualizacao") . "
+        FROM produtos p
+        JOIN grupos g ON p.grupo_id = g.id
+        WHERE 1=1";
+
+            // Adicionar filtro de itens ativos se as colunas existirem
+            if ($temColunaAtivoGrupos) {
+                $sql .= ($dbType == 'pgsql') ? " AND g.ativo = TRUE" : " AND g.ativo = 1";
+            }
+
+            if ($temColunaAtivoProdutos) {
+                $sql .= ($dbType == 'pgsql') ? " AND p.ativo = TRUE" : " AND p.ativo = 1";
             }
 
             // Adicionar filtro de grupo se não for "todos"
-            if ($grupoSelecionado !== 'todos') {
-                $sql .= " WHERE g.id = :grupo_id";
+            if (isset($grupoSelecionado) && $grupoSelecionado !== 'todos') {
+                $sql .= " AND g.id = :grupo_id";
             }
 
             $sql .= " ORDER BY g.nome, p.nome";
@@ -271,7 +308,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
             $stmt = $pdo->prepare($sql);
 
             // Bind do parâmetro se necessário
-            if ($grupoSelecionado !== 'todos') {
+            if (isset($grupoSelecionado) && $grupoSelecionado !== 'todos') {
                 $stmt->bindParam(':grupo_id', $grupoSelecionado, PDO::PARAM_INT);
             }
 
@@ -280,16 +317,20 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
             // Buscar propagandas ativas se configurado para exibir
             $propagandas = [];
-            if ($propagandas_ativas) {
-                // Modificar a consulta SQL para respeitar os tipos do PostgreSQL
-                if ($dbType == 'pgsql') {
-                    $sqlPropagandas = "SELECT id, titulo, descricao, imagem, ordem FROM propagandas WHERE ativo = TRUE ORDER BY ordem, id";
-                } else {
-                    // Para MySQL e outros que aceitam 1/0 como boolean
-                    $sqlPropagandas = "SELECT id, titulo, descricao, imagem, ordem FROM propagandas WHERE ativo = 1 ORDER BY ordem, id";
+            if (isset($propagandas_ativas) && $propagandas_ativas) {
+                try {
+                    if ($dbType == 'pgsql') {
+                        $sqlPropagandas = "SELECT id, titulo, descricao, imagem, ordem FROM propagandas WHERE ativo = TRUE ORDER BY ordem, id";
+                    } else {
+                        $sqlPropagandas = "SELECT id, titulo, descricao, imagem, ordem FROM propagandas WHERE ativo = 1 ORDER BY ordem, id";
+                    }
+                    $stmtPropagandas = $pdo->prepare($sqlPropagandas);
+                    $stmtPropagandas->execute();
+                    $propagandas = $stmtPropagandas->fetchAll(PDO::FETCH_ASSOC);
+                } catch (Exception $e) {
+                    // Se der erro na busca de propaganda, continua sem elas
+                    $propagandas = [];
                 }
-                $stmtPropagandas = $pdo->query($sqlPropagandas);
-                $propagandas = $stmtPropagandas->fetchAll(PDO::FETCH_ASSOC);
             }
 
             if (!empty($produtos)) {
@@ -297,6 +338,19 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 foreach ($produtos as $produto) {
                     $grupos[$produto['grupo']][] = $produto;
                 }
+
+                // Verificar se variáveis necessárias estão definidas
+                $grupoSelecionado = isset($grupoSelecionado) ? $grupoSelecionado : 'todos';
+                $propagandas_ativas = isset($propagandas_ativas) ? $propagandas_ativas : false;
+                $tempoSlide = isset($tempoSlide) ? $tempoSlide : 5000;
+                $tempoExtraPorProduto = isset($tempoExtraPorProduto) ? $tempoExtraPorProduto : 200;
+                $tempoRolagem = isset($tempoRolagem) ? $tempoRolagem : 10;
+                $tempo_propagandas = isset($tempo_propagandas) ? $tempo_propagandas : 5000;
+                $estiloAtual = isset($estiloAtual) ? $estiloAtual : [
+                    'header_bg' => 'bg-primary',
+                    'text' => 'text-white',
+                    'table_header' => 'table-dark'
+                ];
 
                 // Se foi selecionado apenas um grupo, desativa o carrossel
                 $mostrarCarrossel = ($grupoSelecionado === 'todos') || !empty($propagandas);
@@ -314,10 +368,7 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 function intercalarPropagandas($indiceGrupo, $totalGrupos, $propagandas)
                 {
                     if (empty($propagandas)) return false;
-
-                    // Exibe propaganda após cada 2 grupos (ajuste conforme necessário)
                     $frequencia = 2;
-
                     return ($indiceGrupo > 0 && $indiceGrupo % $frequencia === 0);
                 }
 
@@ -360,10 +411,14 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     foreach ($listaProdutos as $item) {
                         $recemAtualizado = false;
                         if (isset($item['ultima_atualizacao']) && !empty($item['ultima_atualizacao'])) {
-                            $dataAtualizacao = new DateTime($item['ultima_atualizacao']);
-                            $agora = new DateTime();
-                            $diferenca = $agora->diff($dataAtualizacao);
-                            $recemAtualizado = $diferenca->days < 1;
+                            try {
+                                $dataAtualizacao = new DateTime($item['ultima_atualizacao']);
+                                $agora = new DateTime();
+                                $diferenca = $agora->diff($dataAtualizacao);
+                                $recemAtualizado = $diferenca->days < 1;
+                            } catch (Exception $e) {
+                                $recemAtualizado = false;
+                            }
                         }
 
                         echo '<tr' . ($recemAtualizado ? ' class="preco-novo"' : '') . '>';
@@ -377,10 +432,10 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     echo '</table>';
 
                     // Fechar containers
+                    echo '</div></div>'; // fecha tabela-scroll e tabela-container
                     if ($modoExibicao != 'grande') {
                         echo '</div>'; // fecha table-container                        
                     }
-                    echo '</div></div>'; // fecha tabela-scroll e tabela-container
 
                     if ($mostrarCarrossel) {
                         echo '</div>'; // fecha carousel-item
@@ -391,25 +446,21 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                     $slideIndex++;
                     $grupoAtual++;
 
-                    // Inserir propaganda após alguns grupos se configurado e tiver propagandas disponíveis
-                    // $tempo_propagandas = 5000; // Define o tempo das propagandas (em milissegundos)
-
+                    // Inserir propaganda após alguns grupos se configurado
                     if ($propagandas_ativas && !empty($propagandas)) {
                         $deveExibirPropaganda = intercalarPropagandas($grupoAtual, $totalGrupos, $propagandas);
 
                         if ($deveExibirPropaganda) {
-                            // Pega uma propaganda da lista (de forma circular)
                             $indicePropaganda = ($grupoAtual / floor($totalGrupos / count($propagandas)) - 1) % count($propagandas);
                             $propaganda = $propagandas[intval($indicePropaganda)];
 
-                            // Adiciona o slide de propaganda
                             echo '<div class="carousel-item" data-bs-interval="' . $tempo_propagandas . '">';
                             echo '<div class="propaganda-item">';
                             echo '<div class="position-relative">';
 
                             // Imagem da propaganda
                             echo '<img src="uploads/propagandas/' . htmlspecialchars($propaganda['imagem']) . '" 
-                                     class="propaganda-imagem" alt="' . htmlspecialchars($propaganda['titulo']) . '">';
+                             class="propaganda-imagem" alt="' . htmlspecialchars($propaganda['titulo']) . '">';
 
                             // Título/descrição na parte inferior
                             if (!empty($propaganda['titulo']) || !empty($propaganda['descricao'])) {
@@ -423,50 +474,29 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                                 echo '</div>';
                             }
 
-                            echo '</div>'; // fecha position-relative
-                            echo '</div>'; // fecha propaganda-item
-                            echo '</div>'; // fecha carousel-item
-
+                            echo '</div></div></div>';
                             $slideIndex++;
                         }
                     }
                 }
 
                 if ($mostrarCarrossel) {
-                    echo '</div>'; // fecha carousel-inner
-
-                    // Adiciona controles de navegação se houver mais de um slide
-                    if ($slideIndex > 1) {
-                        // echo '<button class="carousel-control-prev" type="button" data-bs-target="#grupoCarousel" data-bs-slide="prev">';
-                        // echo '<span class="carousel-control-prev-icon" aria-hidden="true"></span>';
-                        // echo '<span class="visually-hidden">Anterior</span>';
-                        // echo '</button>';
-                        // echo '<button class="carousel-control-next" type="button" data-bs-target="#grupoCarousel" data-bs-slide="next">';
-                        // echo '<span class="carousel-control-next-icon" aria-hidden="true"></span>';
-                        // echo '<span class="visually-hidden">Próximo</span>';
-                        // echo '</button>';
-                    }
-
-                    echo '</div>'; // fecha grupoCarousel
+                    echo '</div></div>'; // fecha carousel-inner e grupoCarousel
                 }
             } else {
                 echo '<div class="alert alert-warning m-5">Nenhum produto disponível para exibição.</div>';
             }
-
-            $stmt = null;
-            $pdo = null;
         } catch (PDOException $e) {
-            $isDev = false;
-            if ($isDev) {
-                echo '<div class="alert alert-danger m-4">
-                    Ocorreu um erro ao carregar a tabela de preços. Por favor, tente novamente mais tarde.
-                </div>';
-            }
             echo '<div class="alert alert-danger m-4">
-                    <h4>Erro ao carregar a tabela de preços:</h4>
-                    <p>' . htmlspecialchars($e->getMessage()) . '</p>
-                    <p>Arquivo: ' . htmlspecialchars($e->getFile()) . ' (linha ' . $e->getLine() . ')</p>
-                </div>';
+            <h4>Erro ao carregar a tabela de preços:</h4>
+            <p>' . htmlspecialchars($e->getMessage()) . '</p>
+            <p>Arquivo: ' . htmlspecialchars($e->getFile()) . ' (linha ' . $e->getLine() . ')</p>
+        </div>';
+        } catch (Exception $e) {
+            echo '<div class="alert alert-danger m-4">
+            <h4>Erro geral:</h4>
+            <p>' . htmlspecialchars($e->getMessage()) . '</p>
+        </div>';
         }
         ?>
     </div>
@@ -483,6 +513,8 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- adicionar o footer padrão depois -->
     </footer>
 
 
@@ -571,8 +603,6 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
                 // Atualizar horário local - APENAS UMA VEZ NO CARREGAMENTO
                 atualizarHoraLocal();
 
-                // REMOVIDO o setInterval para atualizarHoraLocal
-
                 // Iniciar contagem regressiva para próxima atualização
                 if (atualizacaoAuto > 0) {
                     iniciarContagemRegressiva();
@@ -646,78 +676,95 @@ $estiloAtual = isset($temas[$tema]) ? $temas[$tema] : $temas['padrao'];
 
             function resetAllScrolls() {
                 const scrollContainers = document.querySelectorAll('.tabela-scroll');
-
                 scrollContainers.forEach(container => {
-                    if (container.scrollData) {
+                    if (container.scrollData && container.scrollData.interval) {
                         clearInterval(container.scrollData.interval);
                         container.scrollData.currentPosition = 0;
                         container.style.top = '0px';
-
-                        setTimeout(() => {
-                            if (container.offsetHeight > container.parentElement.offsetHeight) {
-                                startScroll(container);
-                            }
-                        }, 500);
+                        startScroll(container);
                     }
                 });
             }
 
-            // Atualizar horário local - Esta função só será chamada no carregamento inicial
             function atualizarHoraLocal() {
-                const agora = new Date();
-                const horaFormatada = agora.toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                });
-                document.getElementById('hora-local').textContent = horaFormatada;
+                const now = new Date();
+                const horaLocal = now.toLocaleTimeString('pt-BR');
+                document.getElementById('hora-local').innerText = horaLocal;
             }
 
-            // Iniciar contagem regressiva para próxima atualização
             function iniciarContagemRegressiva() {
-                // Limpar intervalo anterior se existir
+                // Limpar qualquer intervalo existente
                 if (intervalAtualizacao) {
                     clearInterval(intervalAtualizacao);
                 }
 
-                // Elemento para mostrar tempo restante
-                const tempoRestanteEl = document.getElementById('tempo-restante');
+                // Configurar o novo intervalo
+                tempoRestante = atualizacaoAuto * 60; // Reiniciar contagem (em segundos)
+                atualizarContador();
 
-                // Formato da exibição do tempo
-                function formatarTempo(segundos) {
-                    const minutos = Math.floor(segundos / 60);
-                    const segs = segundos % 60;
-
-                    if (minutos > 0) {
-                        return `${minutos}:${segs.toString().padStart(2, '0')}`;
-                    } else {
-                        return `${segs}s`;
-                    }
-                }
-
-                // Atualizar a cada segundo
                 intervalAtualizacao = setInterval(() => {
                     tempoRestante--;
+                    atualizarContador();
 
+                    // Quando chegar a zero, recarregar a página
                     if (tempoRestante <= 0) {
-                        // Chegou a hora de atualizar
-                        clearInterval(intervalAtualizacao);
-
-                        // Recarregar página completa ao invés de usar AJAX
-                        // Isso corrige problemas com o contador de tempo
-                        window.location.reload();
-                    } else {
-                        // Atualizar o contador
-                        if (tempoRestanteEl) {
-                            tempoRestanteEl.textContent = formatarTempo(tempoRestante);
-                        } else {
-                            // Se o elemento não existir, parar o contador
-                            clearInterval(intervalAtualizacao);
-                            console.error("Elemento tempo-restante não encontrado!");
-                        }
+                        recarregarPagina();
                     }
                 }, 1000);
             }
+
+            function atualizarContador() {
+                const minutos = Math.floor(tempoRestante / 60);
+                const segundos = tempoRestante % 60;
+                const formatado = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+                document.getElementById('tempo-restante').innerText = formatado;
+            }
+
+            function recarregarPagina() {
+                // Mantém os parâmetros da URL atual
+                window.location.reload();
+            }
+
+            // Função para recarregar conteúdo via AJAX
+            function recarregarConteudoAjax() {
+                const xhr = new XMLHttpRequest();
+                const url = window.location.href + (window.location.href.includes('?') ? '&ajax=1' : '?ajax=1');
+
+                xhr.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+                        document.querySelector('.container-fluid').innerHTML = this.responseText;
+                        setupAutoScroll();
+                        atualizarHoraLocal();
+                        iniciarContagemRegressiva();
+                    }
+                };
+
+                xhr.open('GET', url, true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                xhr.send();
+            }
+
+            // Evento para teclas de atalho
+            document.addEventListener('keydown', function(e) {
+                const carouselElement = document.getElementById('grupoCarousel');
+                if (!carouselElement) return;
+
+                const carousel = bootstrap.Carousel.getInstance(carouselElement);
+                if (!carousel) return;
+
+                // Setas esquerda/direita para navegação
+                if (e.key === 'ArrowLeft') {
+                    carousel.prev();
+                } else if (e.key === 'ArrowRight') {
+                    carousel.next();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    // Tecla 'r' para recarregar
+                    recarregarPagina();
+                }
+            });
+
+            // Adicionar uma função para verificar periodicamente se há atualizações no banco de dados
+            // Esta é uma solução opcional que pode ser implementada posteriormente
         </script>
     <?php endif; ?>
 </body>

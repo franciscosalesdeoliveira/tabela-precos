@@ -28,10 +28,9 @@ try {
     }
 
     // Últimas empresas cadastradas
-    $stmt = $pdo->prepare("SELECT razao_social, fantasia, created_at FROM empresas ORDER BY created_at DESC LIMIT 5");
+    $stmt = $pdo->prepare("SELECT razao_social, fantasia, criado_em FROM empresas ORDER BY criado_em DESC LIMIT 5");
     $stmt->execute();
     $ultimas_empresas = $stmt->fetchAll();
-
 } catch (PDOException $e) {
     $empresas_ativas = 0;
     $empresas_inativas = 0;
@@ -170,8 +169,8 @@ try {
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-hover);
+            transform: translateY(-5px) !important;
+            box-shadow: var(--shadow-hover) !important;
         }
 
         .stat-header {
@@ -265,7 +264,7 @@ try {
             left: -50%;
             width: 200%;
             height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
             transform: rotate(45deg);
             transition: all 0.5s;
             opacity: 0;
@@ -366,9 +365,19 @@ try {
         }
 
         @keyframes shine {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+                opacity: 0;
+            }
         }
 
         @media (max-width: 768px) {
@@ -399,6 +408,7 @@ try {
             }
         }
     </style>
+
 </head>
 
 <body>
@@ -487,7 +497,7 @@ try {
                         </div>
                     </a>
 
-                    <a href="relatorios.php" class="module-card relatorios">
+                    <!-- <a href="relatorios.php" class="module-card relatorios">
                         <div class="module-icon">📈</div>
                         <div class="module-title">Relatórios</div>
                         <div class="module-description">
@@ -509,7 +519,7 @@ try {
                         <div class="module-description">
                             Realize backup e restauração dos dados do sistema
                         </div>
-                    </a>
+                    </a> -->
                 </div>
             </div>
 
@@ -524,7 +534,7 @@ try {
                                     <div class="activity-fantasy"><?= htmlspecialchars($empresa['fantasia']) ?></div>
                                 <?php endif; ?>
                                 <div class="activity-date">
-                                    Cadastrada em <?= $empresa['created_at'] ? date('d/m/Y H:i', strtotime($empresa['created_at'])) : 'Data não disponível' ?>
+                                    Cadastrada em <?= $empresa['criado_em'] ? date('d/m/Y H:i', strtotime($empresa['criado_em'])) : 'Data não disponível' ?>
                                 </div>
                             </li>
                         <?php endforeach; ?>
@@ -546,7 +556,7 @@ try {
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
-                
+
                 setTimeout(() => {
                     card.style.transition = 'all 0.5s ease';
                     card.style.opacity = '1';
@@ -557,20 +567,29 @@ try {
             // Atualização automática do horário
             function atualizarHorario() {
                 const agora = new Date();
+                const formatter = new Intl.DateTimeFormat('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',                    
+                    // hour12: true,
+                    timeZone: 'America/Sao_Paulo'
+                });
+
                 const horarioElement = document.querySelector('.user-info span:last-child');
                 if (horarioElement) {
-                    horarioElement.textContent = agora.toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
+                    horarioElement.textContent = formatter.format(agora);
                 }
             }
 
-            // Atualizar a cada minuto
-            setInterval(atualizarHorario, 60000);
+            // ✅ Chama a função imediatamente ao carregar a página
+            atualizarHorario();
+
+            // ✅ E depois a cada segundo
+            // setInterval(atualizarHorario, 60000); // Atualiza a cada minuto
+            setInterval(atualizarHorario, 1000);
 
             // Efeito de hover nos módulos
             const moduleCards = document.querySelectorAll('.module-card');

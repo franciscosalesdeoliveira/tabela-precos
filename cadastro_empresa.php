@@ -8,6 +8,7 @@ $empresa_cadastrada = false; // Flag para controlar se a empresa foi cadastrada
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
+
     // Buscar empresa na API
     if (isset($_POST['buscar_cnpj'])) {
         $cnpj = preg_replace('/\D/', '', $_POST['cnpj'] ?? '');
@@ -63,8 +64,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 
+    function arrayToHiddenInputs($data)
+    {
+        $html = '';
+        foreach ($data as $key => $value) {
+            $html .= "<input type='hidden' name='" . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . "' value='" . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . "'>\n";
+        }
+        return $html;
+    }
 
-    // Cadastrar empresa no banco
+    if (isset($_POST['cancelar_atualizacao'])) {
+        // Você pode apenas limpar os dados e recarregar a página, por exemplo
+        header("Location: cadastro_empresa.php");
+        exit;
+    }
+
     if (isset($_POST['cadastrar_empresa'])) {
         $cnpj = $_POST['cnpj'];
         $razao_social = $_POST['nome'];
@@ -72,6 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $rg_ie = $_POST['rg_ie'];
         $telefone = $_POST['telefone'];
         $email = $_POST['email'];
+        $site = $_POST['site'] ?? '';
         $logradouro = $_POST['endereco'];
         $numero = $_POST['numero'];
         $complemento = $_POST['complemento'] ?? '';
@@ -81,109 +96,164 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $cep = $_POST['cep'];
         $descricao_situacao_cadastral = $_POST['sit'] ?? '';
 
-        if ($descricao_situacao_cadastral != 'ATIVA') {
-            $descricao_situacao_cadastral = 'N';
-        } else {
-            $descricao_situacao_cadastral = 'S';
-        }
-
+        $descricao_situacao_cadastral = ($descricao_situacao_cadastral === 'ATIVA') ? 'S' : 'N';
         $cnae_fiscal_descricao = $_POST['cnae'] ?? '';
         $uuid = gerarUuidV4();
+        $criado_por = 1;
+        $atualizado_por = 1;
 
-        // ADICIONAR CAMPOS OBRIGATÓRIOS QUE ESTÃO FALTANDO:
-        $criado_por = 1; // ID do usuário que está criando (você pode pegar da sessão)
-        $atualizado_por = 1; // ID do usuário que está atualizando
+        if (isset($_POST['modo']) && $_POST['modo'] === 'atualizar') {
+            $uuid = $_POST['uuid'];
+            try {
+                $stmt = $pdo->prepare("UPDATE empresas SET 
+                cpf_cnpj = :cpf_cnpj, 
+                razao_social = :razao_social, 
+                fantasia = :fantasia, 
+                rg_ie = :rg_ie, 
+                telefone = :telefone, 
+                email = :email, 
+                site = :site, 
+                logradouro = :logradouro, 
+                numero = :numero, 
+                complemento = :complemento, 
+                bairro = :bairro, 
+                cidade = :cidade, 
+                estado = :estado, 
+                cep = :cep, 
+                ativo = :ativo, 
+                cnae_fiscal_descricao = :cnae_fiscal_descricao,
+                atualizado_por = :atualizado_por
+            WHERE uuid = :uuid");
 
-        // Se você tem sistema de login, use algo como:
-        // $criado_por = $_SESSION['usuario_id'] ?? 1;
-        // $atualizado_por = $_SESSION['usuario_id'] ?? 1;
+                $stmt->execute([
+                    ':uuid' => $uuid,
+                    ':cpf_cnpj' => $cnpj,
+                    ':razao_social' => $razao_social,
+                    ':fantasia' => $nome_fantasia,
+                    ':rg_ie' => $rg_ie,
+                    ':telefone' => $telefone,
+                    ':email' => $email,
+                    ':site' => $site,
+                    ':logradouro' => $logradouro,
+                    ':numero' => $numero,
+                    ':complemento' => $complemento,
+                    ':bairro' => $bairro,
+                    ':cidade' => $municipio,
+                    ':estado' => $uf,
+                    ':cep' => $cep,
+                    ':ativo' => $descricao_situacao_cadastral,
+                    ':cnae_fiscal_descricao' => $cnae_fiscal_descricao,
+                    ':atualizado_por' => $atualizado_por
+                ]);
+
+                header("Location: cadastro_empresa.php");
+                exit;
+            } catch (PDOException $e) {
+                echo "<p style='color:red;'>Erro ao atualizar empresa: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . "</p>";
+            }
+        }
 
         try {
-            $stmt = $pdo->prepare("INSERT INTO empresas (
-            uuid, 
-            cpf_cnpj, 
-            razao_social, 
-            fantasia, 
-            rg_ie, 
-            telefone, 
-            email, 
-            logradouro, 
-            numero, 
-            complemento, 
-            bairro, 
-            cidade, 
-            estado, 
-            cep, 
-            ativo, 
-            cnae_fiscal_descricao,
-            criado_por,
-            atualizado_por,
-        ) VALUES (
-            :uuid, 
-            :cpf_cnpj, 
-            :razao_social, 
-            :fantasia, 
-            :rg_ie, 
-            :telefone, 
-            :email, 
-            :logradouro, 
-            :numero, 
-            :complemento, 
-            :bairro, 
-            :cidade, 
-            :estado, 
-            :cep, 
-            :ativo, 
-            :cnae_fiscal_descricao,
-            :criado_por,
-            :atualizado_por
-        )");
+            $stmt_check = $pdo->prepare("SELECT uuid FROM empresas WHERE cpf_cnpj = :cnpj");
+            $stmt_check->execute([':cnpj' => $cnpj]);
+            $empresa_existente = $stmt_check->fetch();
 
-            $stmt->execute([
-                ':uuid' => $uuid,
-                ':cpf_cnpj' => $cnpj,
-                ':razao_social' => $razao_social,
-                ':fantasia' => $nome_fantasia,
-                ':rg_ie' => $rg_ie,
-                ':telefone' => $telefone,
-                ':email' => $email,
-                ':logradouro' => $logradouro,
-                ':numero' => $numero,
-                ':complemento' => $complemento,
-                ':bairro' => $bairro,
-                ':cidade' => $municipio,
-                ':estado' => $uf,
-                ':cep' => $cep,
-                ':ativo' => $descricao_situacao_cadastral,
-                ':cnae_fiscal_descricao' => $cnae_fiscal_descricao,
-                ':criado_por' => $criado_por,
-                ':atualizado_por' => $atualizado_por
-            ]);
+            if ($empresa_existente) {
+                echo "
+    <script>
+        if (confirm('A empresa já existe no banco de dados. Deseja atualizar os dados?')) {
+            // Criar e enviar um formulário oculto com os dados
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
 
-            echo "<p style='color:green;'>Empresa cadastrada com sucesso!</p>";
-            $empresa_cadastrada = true;
+            const postData = " . json_encode($_POST) . ";
+            for (const key in postData) {
+                if (postData.hasOwnProperty(key)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = postData[key];
+                    form.appendChild(input);
+                }
+            }
 
-            // Limpar dados após cadastro bem-sucedido
-            $empresa = [];
-            $empresa_encontrada = false;
+            const uuidInput = document.createElement('input');
+            uuidInput.type = 'hidden';
+            uuidInput.name = 'uuid';
+            uuidInput.value = '" . htmlspecialchars($empresa_existente['uuid'], ENT_QUOTES, 'UTF-8') . "';
+            form.appendChild(uuidInput);
+
+            const modoInput = document.createElement('input');
+            modoInput.type = 'hidden';
+            modoInput.name = 'modo';
+            modoInput.value = 'atualizar';
+            form.appendChild(modoInput);
+
+            const submitInput = document.createElement('input');
+            submitInput.type = 'hidden';
+            submitInput.name = 'cadastrar_empresa';
+            submitInput.value = '1';
+            form.appendChild(submitInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            alert('Cadastro cancelado pelo usuário.');
+        }
+    </script>
+    ";
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO empresas (
+                uuid, cpf_cnpj, razao_social, fantasia, rg_ie, telefone, email, site, 
+                logradouro, numero, complemento, bairro, cidade, estado, cep, 
+                ativo, cnae_fiscal_descricao, criado_por, atualizado_por
+            ) VALUES (
+                :uuid, :cpf_cnpj, :razao_social, :fantasia, :rg_ie, :telefone, :email, :site,
+                :logradouro, :numero, :complemento, :bairro, :cidade, :estado, :cep,
+                :ativo, :cnae_fiscal_descricao, :criado_por, :atualizado_por
+            )");
+
+                $stmt->execute([
+                    ':uuid' => $uuid,
+                    ':cpf_cnpj' => $cnpj,
+                    ':razao_social' => $razao_social,
+                    ':fantasia' => $nome_fantasia,
+                    ':rg_ie' => $rg_ie,
+                    ':telefone' => $telefone,
+                    ':email' => $email,
+                    ':site' => $site,
+                    ':logradouro' => $logradouro,
+                    ':numero' => $numero,
+                    ':complemento' => $complemento,
+                    ':bairro' => $bairro,
+                    ':cidade' => $municipio,
+                    ':estado' => $uf,
+                    ':cep' => $cep,
+                    ':ativo' => $descricao_situacao_cadastral,
+                    ':cnae_fiscal_descricao' => $cnae_fiscal_descricao,
+                    ':criado_por' => $criado_por,
+                    ':atualizado_por' => $atualizado_por
+                ]);
+
+                header("Location: cadastro_empresa.php");
+                exit;
+            }
         } catch (PDOException $e) {
-            echo "<p style='color:red;'>Erro ao cadastrar empresa: " . $e->getMessage() . "</p>";
+            echo "<p style='color:red;'>Erro ao cadastrar empresa: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . "</p>";
         }
     }
 
-
-    // Limpar formulário
+    // LIMPAR FORMULÁRIO
     if (isset($_POST['limpar_formulario'])) {
         $empresa = [];
         $empresa_encontrada = false;
         $empresa_cadastrada = false;
         echo "<p style='color:blue;'>Formulário limpo!</p>";
     }
-    // Redirecionar após salvar
-    header("Location: cadastro_empresa.php");
-    exit;
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -210,8 +280,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
             line-height: 1.6;
         }
 
@@ -221,17 +292,100 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding: 20px;
         }
 
-        header {
-            background-color: var(--primary-color);
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-links a {
+            color: var(--dark-color);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: var(--primary-color);
             color: white;
-            padding: 15px 0;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             margin-bottom: 30px;
             text-align: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
         }
 
         .card {
@@ -447,15 +601,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 height: auto;
             }
         }
+
+        .footer-custom {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: var(--text-color) !important;
+        }
+
+        .footer-custom-text {
+            margin-top: -10px !important;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .footer-custom a {
+            color: var(--text-color) !important;
+            text-decoration: none;
+        }
+
+        .footer-custom a:hover {
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
-    <header>
-        <div class="container">
-            <h1>Painel Administrativo</h1>
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.php" class="logo">
+                🏢 Sistema Administrativo
+            </a>
+            <nav class="nav-links">
+                <a target="_blank" class="btn btn-primary" href="dashboard.php">Dashboard</a>
+                <a target="_blank" class="btn btn-primary" href="listar_empresas.php">Listar Empresas</a>
+                <a target="_blank" class="btn btn-primary" href="cadastro_usuarios.php">Cadastro de Usuários</a>
+            </nav>
         </div>
     </header>
+
 
     <div class="container">
         <div class="card">
@@ -473,7 +655,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                         <div class="form-group">
                             <label for="fantasia">Nome Fantasia:</label>
-                            <input type="text" id="fantasia" name="fantasia" value="<?= $empresa_cadastrada ? '' : htmlspecialchars($empresa['nome_fantasia'] ?? '') ?>">
+                            <input type="text" id="fantasia" name="fantasia" value="<?= $empresa_cadastrada ? '' : htmlspecialchars($empresa['nome_fantasia'] ?? '') ?>" required>
                             <div class="error" id="fantasiaError"></div>
                         </div>
                     </div>
@@ -505,6 +687,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <label for="email">Email *</label>
                             <input type="email" id="email" name="email" required>
                             <div class="error" id="emailError"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="site">Site</label>
+                            <input type="text" id="site" name="site">
+                            <div class="error" id="siteError"></div>
                         </div>
                     </div>
                 </div>
@@ -583,22 +770,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="sit">Situação Cadastral</label>
-                            <input type="text" id="sit" name="sit" value="<?= $empresa_cadastrada ? '' : htmlspecialchars($empresa['descricao_situacao_cadastral'] ?? '') ?>" readonly>
+                            <input type="text" id="sit" name="sit" value="<?= $empresa_cadastrada ? '' : htmlspecialchars($empresa['descricao_situacao_cadastral'] ?? '') ?>">
                         </div>
                         <div class="form-group">
                             <label for="cnae">CNAE Principal</label>
-                            <input type="text" id="cnae" name="cnae" value="<?= $empresa_cadastrada ? '' : htmlspecialchars($empresa['cnae_fiscal_descricao'] ?? '') ?>" readonly>
+                            <input type="text" id="cnae" name="cnae" value="<?= $empresa_cadastrada ? '' : htmlspecialchars($empresa['cnae_fiscal_descricao'] ?? '') ?>">
                         </div>
                     </div>
                 </div>
 
                 <div class="button-group">
-                    <?php if ($empresa_encontrada && !$empresa_cadastrada): ?>
-                        <input type="submit" name="cadastrar_empresa" value="Cadastrar Empresa" class="btn-cadastrar">
-                    <?php endif; ?>
+                    <input type="submit" name="cadastrar_empresa" value="Cadastrar Empresa" class="btn-cadastrar" id="btnCadastrar">
+                    <input type="reset" name="limpar_formulario" value="Limpar Formulário" class="btn-limpar" onclick="limparFormulario()">
 
 
-                    <input type="reset" name="limpar_formulario" value="Limpar Formulário" class="btn-limpar">
+                    <!-- <input type="reset" name="limpar_formulario" value="Limpar Formulário" class="btn-limpar"> -->
                 </div>
 
                 <!-- Campos hidden para envio via POST quando buscar CNPJ via JavaScript -->
@@ -633,23 +819,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Buscar CNPJ ao sair do campo (blur)
             cnpjInput.addEventListener('blur', function() {
                 const cnpjLimpo = this.value.replace(/\D/g, '');
-                if (cnpjLimpo.length === 14 && validarCNPJ(cnpjLimpo)) {
+                if (cnpjLimpo.length === 14 && !buscandoCNPJ) {
                     buscarCNPJ();
                 }
             });
 
-            // Buscar CNPJ ao pressionar Enter
+            // Enter no campo CNPJ para buscar
             cnpjInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const cnpjLimpo = this.value.replace(/\D/g, '');
-                    if (cnpjLimpo.length === 14 && validarCNPJ(cnpjLimpo)) {
+                    if (cnpjLimpo.length === 14) {
                         buscarCNPJ();
                     }
                 }
             });
 
-            // Formatação do CEP
+            // Validação de email em tempo real
+            const emailInput = document.getElementById('email');
+            emailInput.addEventListener('blur', function() {
+                const email = this.value.trim();
+                const emailError = document.getElementById('emailError');
+
+                if (email && !isValidEmail(email)) {
+                    emailError.textContent = 'Por favor, insira um email válido.';
+                    this.style.borderColor = '#e74c3c';
+                } else {
+                    emailError.textContent = '';
+                    this.style.borderColor = '#ddd';
+                }
+            });
+
+            // Validação de site em tempo real
+            const siteInput = document.getElementById('site');
+            siteInput.addEventListener('blur', function() {
+                const site = this.value.trim();
+                const siteError = document.getElementById('siteError');
+
+                if (site && !isValidUrl(site)) {
+                    siteError.textContent = 'Por favor, insira uma URL válida (ex: https://exemplo.com.br).';
+                    this.style.borderColor = '#e74c3c';
+                } else {
+                    siteError.textContent = '';
+                    this.style.borderColor = '#ddd';
+                }
+            });
+
+            function buscarCep(cep) {
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            document.getElementById('endereco').value = data.logradouro;
+                            document.getElementById('bairro').value = data.bairro;
+                            document.getElementById('cidade').value = data.localidade;
+                            document.getElementById('estado').value = data.uf;
+                        } else {
+                            mostrarMensagem('CEP não encontrado!', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar CEP:', error);
+                        mostrarMensagem('Erro ao buscar CEP. Tente novamente.', 'error');
+                    });
+            }
+
+            // Formatação de CEP
             const cepInput = document.getElementById('cep');
             cepInput.addEventListener('input', function() {
                 let value = this.value.replace(/\D/g, '');
@@ -666,59 +901,85 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         });
 
+        // Formatação de telefone
+        const telefoneInput = document.getElementById('telefone');
+        telefoneInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length <= 10) {
+                value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            } else {
+                value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            }
+            this.value = value;
+        });
+
+        // Validação do formulário antes do envio
+        const form = document.getElementById('empresaForm');
+        form.addEventListener('submit', function(e) {
+            if (!validarFormulario()) {
+                e.preventDefault();
+                alert('Por favor, corrija os erros no formulário antes de continuar.');
+            }
+        });
+
+        // Função para buscar CNPJ via API
         function buscarCNPJ() {
             if (buscandoCNPJ) return;
 
             const cnpjInput = document.getElementById('cnpj');
-            const btnBuscar = document.getElementById('btnBuscarCnpj');
             const loading = document.getElementById('cnpjLoading');
+            const btnBuscar = document.getElementById('btnBuscarCnpj');
             const cnpjError = document.getElementById('cnpjError');
 
-            const cnpj = cnpjInput.value.replace(/\D/g, '');
+            const cnpjLimpo = cnpjInput.value.replace(/\D/g, '');
 
-            if (cnpj.length !== 14) {
-                cnpjError.textContent = 'CNPJ deve conter 14 dígitos';
+            if (cnpjLimpo.length !== 14) {
+                cnpjError.textContent = 'CNPJ deve conter exatamente 14 dígitos.';
+                cnpjInput.style.borderColor = '#e74c3c';
                 return;
             }
 
-            if (!validarCNPJ(cnpj)) {
-                cnpjError.textContent = 'CNPJ inválido';
-                return;
-            }
-
-            cnpjError.textContent = '';
             buscandoCNPJ = true;
-            btnBuscar.disabled = true;
-            btnBuscar.textContent = 'Buscando...';
             loading.style.display = 'block';
+            btnBuscar.disabled = true;
+            btnBuscar.textContent = '⏳ Buscando...';
+            cnpjError.textContent = '';
+            cnpjInput.style.borderColor = '#ddd';
 
-            fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`)
+            // Fazer requisição para a API
+            fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('CNPJ não encontrado');
+                        throw new Error('CNPJ não encontrado ou inválido');
                     }
                     return response.json();
                 })
                 .then(data => {
-                    preencherDadosEmpresa(data);
-                    mostrarMensagem('Empresa encontrada! Verifique os dados abaixo.', 'success');
+                    // Preencher os campos com os dados da API
+                    preencherCamposEmpresa(data);
+
+                    // Mostrar mensagem de sucesso
+                    mostrarMensagem('Empresa encontrada! Verifique e complete os dados necessários.', 'success');
                 })
                 .catch(error => {
-                    console.error('Erro:', error);
-                    mostrarMensagem('CNPJ não encontrado ou erro na consulta', 'error');
-                    limparCamposEmpresa();
+                    cnpjError.textContent = error.message;
+                    cnpjInput.style.borderColor = '#e74c3c';
+                    mostrarMensagem('Erro ao buscar CNPJ. Você pode preencher os dados manualmente.', 'error');
                 })
                 .finally(() => {
                     buscandoCNPJ = false;
+                    loading.style.display = 'none';
                     btnBuscar.disabled = false;
                     btnBuscar.textContent = '🔍 Buscar';
-                    loading.style.display = 'none';
                 });
         }
 
-        function preencherDadosEmpresa(empresa) {
+        // Função para preencher os campos com dados da empresa
+        function preencherCamposEmpresa(empresa) {
             document.getElementById('nome').value = empresa.razao_social || '';
-            document.getElementById('fantasia').value = empresa.nome_fantasia || '';
+            document.getElementById('fantasia').value = empresa.nome_fantasia || empresa.razao_social || '';
             document.getElementById('telefone').value = empresa.ddd_telefone_1 || '';
             document.getElementById('cep').value = empresa.cep || '';
             document.getElementById('endereco').value = empresa.logradouro || '';
@@ -730,121 +991,163 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             document.getElementById('sit').value = empresa.descricao_situacao_cadastral || '';
             document.getElementById('cnae').value = empresa.cnae_fiscal_descricao || '';
 
-            // Mostrar botão de cadastrar
-            mostrarBotaoCadastrar();
+            // Aplicar formatação nos campos preenchidos
+            formatarCampo('telefone');
+            formatarCampo('cep');
         }
 
-        function limparCamposEmpresa() {
-            const campos = ['nome', 'fantasia', 'telefone', 'cep', 'endereco', 'numero',
-                'complemento', 'bairro', 'cidade', 'sit', 'cnae'
-            ];
-            campos.forEach(campo => {
-                document.getElementById(campo).value = '';
+        // Função para aplicar formatação em campos específicos
+        function formatarCampo(campo) {
+            const input = document.getElementById(campo);
+            const event = new Event('input', {
+                bubbles: true
             });
-            document.getElementById('estado').selectedIndex = 0;
+            input.dispatchEvent(event);
         }
 
-        function mostrarBotaoCadastrar() {
-            const buttonGroup = document.querySelector('.button-group');
-            const btnCadastrar = document.querySelector('input[name="cadastrar_empresa"]');
+        // Função para validar email
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
 
-            if (!btnCadastrar) {
-                const newBtn = document.createElement('input');
-                newBtn.type = 'submit';
-                newBtn.name = 'cadastrar_empresa';
-                newBtn.value = 'Cadastrar Empresa';
-                newBtn.className = 'btn-cadastrar';
-                buttonGroup.insertBefore(newBtn, buttonGroup.firstChild);
+        // Função para validar URL
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch {
+                return false;
             }
         }
 
-        function mostrarMensagem(texto, tipo) {
-            // Remove mensagens existentes
-            const mensagensAnteriores = document.querySelectorAll('.alert-message');
-            mensagensAnteriores.forEach(msg => msg.remove());
+        // Função para validar o formulário completo
+        function validarFormulario() {
+            let isValid = true;
 
-            const div = document.createElement('div');
-            div.className = `alert-message ${tipo}`;
-            div.style.cssText = `
-                padding: 10px;
-                margin: 10px 0;
-                border-radius: 4px;
-                ${tipo === 'success' ? 
-                    'background-color: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #27ae60;' : 
-                    'background-color: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #c0392b;'}
-            `;
-            div.textContent = texto;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(div, container.firstChild);
-
-            // Remove a mensagem após 5 segundos
-            setTimeout(() => {
-                if (div.parentNode) {
-                    div.remove();
+            // Validar campos obrigatórios
+            const camposObrigatorios = [{
+                    id: 'nome',
+                    nome: 'Razão Social'
+                },
+                {
+                    id: 'fantasia',
+                    nome: 'Nome Fantasia'
+                },
+                {
+                    id: 'cnpj',
+                    nome: 'CNPJ'
+                },
+                {
+                    id: 'email',
+                    nome: 'Email'
                 }
+            ];
+
+            camposObrigatorios.forEach(campo => {
+                const input = document.getElementById(campo.id);
+                const value = input.value.trim();
+
+                if (!value) {
+                    input.style.borderColor = '#e74c3c';
+                    isValid = false;
+                } else {
+                    input.style.borderColor = '#ddd';
+                }
+            });
+
+            // Validar CNPJ
+            const cnpjInput = document.getElementById('cnpj');
+            const cnpjLimpo = cnpjInput.value.replace(/\D/g, '');
+            if (cnpjLimpo.length !== 14) {
+                cnpjInput.style.borderColor = '#e74c3c';
+                document.getElementById('cnpjError').textContent = 'CNPJ deve conter 14 dígitos.';
+                isValid = false;
+            }
+
+            // Validar email
+            const emailInput = document.getElementById('email');
+            if (emailInput.value && !isValidEmail(emailInput.value)) {
+                emailInput.style.borderColor = '#e74c3c';
+                document.getElementById('emailError').textContent = 'Email inválido.';
+                isValid = false;
+            }
+
+            // Validar site se preenchido
+            const siteInput = document.getElementById('site');
+            if (siteInput.value && !isValidUrl(siteInput.value)) {
+                siteInput.style.borderColor = '#e74c3c';
+                document.getElementById('siteError').textContent = 'URL inválida.';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Função para limpar o formulário
+        function limparFormulario() {
+            // Limpar todos os campos
+            document.getElementById('empresaForm').reset();
+
+            // Limpar mensagens de erro
+            const errorElements = document.querySelectorAll('.error');
+            errorElements.forEach(error => error.textContent = '');
+
+            // Resetar bordas dos campos
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => input.style.borderColor = '#ddd');
+
+            // Focar no campo CNPJ
+            document.getElementById('cnpj').focus();
+
+            // Mostrar mensagem
+            mostrarMensagem('Formulário limpo! Você pode inserir dados manualmente ou buscar por CNPJ.', 'success');
+        }
+
+        // Função para mostrar mensagens
+        function mostrarMensagem(texto, tipo) {
+            // Remover mensagens existentes
+            const mensagensExistentes = document.querySelectorAll('.mensagem-temp');
+            mensagensExistentes.forEach(msg => msg.remove());
+
+            // Criar nova mensagem
+            const mensagem = document.createElement('div');
+            mensagem.className = `mensagem-temp status-message ${tipo}`;
+            mensagem.textContent = texto;
+            mensagem.style.display = 'block';
+
+            // Inserir mensagem no início do container
+            const container = document.querySelector('.container');
+            container.insertBefore(mensagem, container.firstChild);
+
+            // Remover mensagem após 5 segundos
+            setTimeout(() => {
+                mensagem.remove();
             }, 5000);
         }
 
-        function buscarCep(cep) {
-            fetch(`https://viacep.com.br/ws/${cep}/json/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.erro) {
-                        document.getElementById('endereco').value = data.logradouro;
-                        document.getElementById('bairro').value = data.bairro;
-                        document.getElementById('cidade').value = data.localidade;
-                        document.getElementById('estado').value = data.uf;
-                    } else {
-                        mostrarMensagem('CEP não encontrado!', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar CEP:', error);
-                    mostrarMensagem('Erro ao buscar CEP. Tente novamente.', 'error');
-                });
+        // Função para habilitar cadastro manual
+        function habilitarCadastroManual() {
+            mostrarMensagem('Modo de cadastro manual ativado. Preencha todos os campos obrigatórios.', 'success');
+            document.getElementById('nome').focus();
         }
 
-        // Validação de CNPJ
-        function validarCNPJ(cnpj) {
-            cnpj = cnpj.replace(/[^\d]+/g, '');
+        // Adicionar dica para cadastro manual
+        document.addEventListener('DOMContentLoaded', function() {
+            const cnpjInput = document.getElementById('cnpj');
+            const dica = document.createElement('small');
+            dica.style.color = '#666';
+            dica.style.fontSize = '12px';
+            dica.style.display = 'block';
+            dica.style.marginTop = '5px';
+            dica.innerHTML = '💡 <em>Dica: Você pode buscar por CNPJ ou preencher manualmente todos os campos obrigatórios.</em>';
 
-            if (cnpj.length !== 14) return false;
-
-            // Elimina CNPJs inválidos conhecidos
-            if (/^(\d)\1+$/.test(cnpj)) return false;
-
-            // Validação do primeiro dígito
-            let tamanho = cnpj.length - 2;
-            let numeros = cnpj.substring(0, tamanho);
-            let digitos = cnpj.substring(tamanho);
-            let soma = 0;
-            let pos = tamanho - 7;
-
-            for (let i = tamanho; i >= 1; i--) {
-                soma += numeros.charAt(tamanho - i) * pos--;
-                if (pos < 2) pos = 9;
-            }
-
-            let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-            if (resultado !== parseInt(digitos.charAt(0))) return false;
-
-            // Validação do segundo dígito
-            tamanho = tamanho + 1;
-            numeros = cnpj.substring(0, tamanho);
-            soma = 0;
-            pos = tamanho - 7;
-
-            for (let i = tamanho; i >= 1; i--) {
-                soma += numeros.charAt(tamanho - i) * pos--;
-                if (pos < 2) pos = 9;
-            }
-
-            resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-            return resultado === parseInt(digitos.charAt(1));
-
-        }
+            cnpjInput.parentNode.appendChild(dica);
+        });
     </script>
 </body>
+<?php
+require_once 'footer.php';
+?>
 
 </html>

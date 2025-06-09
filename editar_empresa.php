@@ -1,100 +1,105 @@
 <?php
-$titulo = "Pesquisa de Empresas";
+$titulo = "Editar Empresa";
 require_once 'connection.php';
 require_once 'header.php';
 
-// Configurações de paginação
-$registros_por_pagina = 10;
-$pagina_atual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-$offset = ($pagina_atual - 1) * $registros_por_pagina;
-
-// Filtros de pesquisa
-$filtro_nome = $_GET['nome'] ?? '';
-$filtro_cnpj = $_GET['cnpj'] ?? '';
-$filtro_cidade = $_GET['cidade'] ?? '';
-$filtro_estado = $_GET['estado'] ?? '';
-$filtro_ativo = $_GET['ativo'] ?? '';
-
-// Construir query de pesquisa
-$where_conditions = [];
-$params = [];
-
-if (!empty($filtro_nome)) {
-    $where_conditions[] = "(razao_social LIKE :nome OR fantasia LIKE :nome)";
-    $params[':nome'] = "%$filtro_nome%";
+// Verificar se foi passado o ID
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    header('Location: pesquisa_empresas.php');
+    exit;
 }
 
-if (!empty($filtro_cnpj)) {
-    // Remover formatação do CNPJ para pesquisa
-    $cnpj_limpo = preg_replace('/\D/', '', $filtro_cnpj);
-    if (strlen($cnpj_limpo) > 0) {
-        $where_conditions[] = "REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '/', ''), '-', '') LIKE :cnpj";
-        $params[':cnpj'] = "%$cnpj_limpo%";
-    }
-}
+$empresa_id = (int)$_GET['id'];
 
-if (!empty($filtro_cidade)) {
-    $where_conditions[] = "cidade LIKE :cidade";
-    $params[':cidade'] = "%$filtro_cidade%";
-}
-
-if (!empty($filtro_estado)) {
-    $where_conditions[] = "estado = :estado";
-    $params[':estado'] = $filtro_estado;
-}
-
-if ($filtro_ativo !== '') {
-    $where_conditions[] = "ativo = :ativo";
-    $params[':ativo'] = $filtro_ativo;
-}
-
-$where_clause = '';
-if (!empty($where_conditions)) {
-    $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
-}
-
-// Query para contar total de registros
-$count_sql = "SELECT COUNT(*) as total FROM empresas $where_clause";
-$count_stmt = $pdo->prepare($count_sql);
-foreach ($params as $key => $value) {
-    $count_stmt->bindValue($key, $value);
-}
-$count_stmt->execute();
-$total_registros = $count_stmt->fetch()['total'];
-$total_paginas = ceil($total_registros / $registros_por_pagina);
-
-// Query principal para buscar empresas
-$sql = "SELECT 
-            id, 
-            uuid, 
-            cpf_cnpj, 
-            razao_social, 
-            fantasia, 
-            telefone, 
-            email, 
-            cidade, 
-            estado, 
-            ativo, 
-            criado_em,
-            atualizado_em
-        FROM empresas 
-        $where_clause 
-        ORDER BY razao_social ASC 
-        LIMIT :limit OFFSET :offset";
-
+// Buscar dados da empresa
+$sql = "SELECT * FROM empresas WHERE id = :id";
 $stmt = $pdo->prepare($sql);
+$stmt->bindValue(':id', $empresa_id, PDO::PARAM_INT);
+$stmt->execute();
+$empresa = $stmt->fetch();
 
-// Bind dos parâmetros de pesquisa
-foreach ($params as $key => $value) {
-    $stmt->bindValue($key, $value);
+if (!$empresa) {
+    echo "<script>alert('Empresa não encontrada!'); window.location.href='pesquisa_empresas.php';</script>";
+    exit;
 }
 
-// Bind dos parâmetros de paginação
-$stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+// Processar formulário de edição
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    try {
+        // Validações básicas
+        $errors = [];
 
-$stmt->execute();
-$empresas = $stmt->fetchAll();
+        if (empty($_POST['razao_social'])) {
+            $errors[] = "Razão Social é obrigatório";
+        }
+
+        if (empty($_POST['cpf_cnpj'])) {
+            $errors[] = "CNPJ é obrigatório";
+        } else {
+            $cnpj = preg_replace('/\D/', '', $_POST['cpf_cnpj']);
+            if (strlen($cnpj) != 14) {
+                $errors[] = "CNPJ deve ter 14 dígitos";
+            }
+        }
+
+        if (empty($_POST['logradouro'])) {
+            $errors[] = "Logradouro é obrigatório";
+        }
+
+        if (empty($_POST['estado'])) {
+            $errors[] = "Estado é obrigatório";
+        }
+
+        if (!empty($_POST['email']) && !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "E-mail inválido";
+        }
+
+        if (empty($errors)) {
+            $sql_update = "UPDATE empresas SET 
+                           razao_social = :razao_social,
+                           fantasia = :fantasia,
+                           cpf_cnpj = :cpf_cnpj,
+                           telefone = :telefone,
+                           email = :email,
+                           site = :site,
+                           logradouro = :logradouro,
+                           cidade = :cidade,
+                           estado = :estado,
+                           cep = :cep,
+                           ativo = :ativo,
+                           atualizado_em = NOW()
+                           WHERE id = :id";
+
+            $stmt_update = $pdo->prepare($sql_update);
+            $stmt_update->execute([
+                ':razao_social' => trim($_POST['razao_social']),
+                ':fantasia' => !empty($_POST['fantasia']) ? trim($_POST['fantasia']) : null,
+                ':cpf_cnpj' => preg_replace('/\D/', '', $_POST['cpf_cnpj']),
+                ':telefone' => !empty($_POST['telefone']) ? preg_replace('/\D/', '', $_POST['telefone']) : null,
+                ':email' => !empty($_POST['email']) ? trim($_POST['email']) : null,
+                ':site' => !empty($_POST['site']) ? trim($_POST['site']) : null,
+                ':logradouro' => !empty($_POST['logradouro']) ? trim($_POST['logradouro']) : null,
+                ':cidade' => trim($_POST['cidade']),
+                ':estado' => $_POST['estado'],
+                ':cep' => !empty($_POST['cep']) ? preg_replace('/\D/', '', $_POST['cep']) : null,
+                ':ativo' => $_POST['ativo'],
+                ':id' => $empresa_id
+            ]);
+
+            $sucesso = "Empresa atualizada com sucesso!";
+
+            // Recarregar dados atualizados
+            $stmt->execute();
+            $empresa = $stmt->fetch();
+        }
+    } catch (Exception $e) {
+        $erro = "Erro ao atualizar empresa: " . $e->getMessage();
+    }
+    // Redirecionar após salvar
+    header("Location: listar_empresas.php");
+    exit;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -103,125 +108,234 @@ $empresas = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesquisa de Empresas</title>
+    <title>Editar Empresa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #3498db;
-            --primary-dark: #2980b9;
-            --success-color: #2ecc71;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --bg-color: #f8f9fa;
-            --text-color: #333;
-            --border-color: #ddd;
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #93c5fd;
+            --success-color: #10b981;
+            --success-light: #d1fae5;
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --bg-color: #f8fafc;
+            --bg-white: #ffffff;
+            --text-color: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --border-focus: #3b82f6;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius: 8px;
+            --radius-lg: 12px;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             color: var(--text-color);
             line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
 
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 15px 0;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        h1 {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            color: var(--primary-dark);
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .btn-novo {
-            background-color: var(--success-color);
-            color: white;
-            padding: 8px 16px;
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
             text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .btn-novo:hover {
-            background-color: #27ae60;
+        .nav-links {
+            display: flex;
+            gap: 1rem;
         }
 
-        .filters-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+        .nav-links a {
+            color: var(--dark-color);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .card {
+            background: var(--bg-white);
+            /* border-radius: var(--radius-lg); */
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
             margin-bottom: 20px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
+
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 20px 30px;
+            /* border-bottom: 1px solid var(--border-color); */
+
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 30px;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: var(--success-light);
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert-danger {
+            background-color: var(--danger-light);
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
         }
 
         .form-group {
-            display: flex;
-            flex-direction: column;
+            margin-bottom: 20px;
         }
 
         .form-group label {
-            margin-bottom: 5px;
-            font-weight: 500;
-            font-size: 14px;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .form-group label.required::after {
+            content: " *";
+            color: var(--danger-color);
+        }
+
+        .input-wrapper {
+            position: relative;
         }
 
         .form-group input,
         .form-group select {
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background-color: var(--bg-white);
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            border-color: var(--border-focus);
+            background-color: #fafbff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .filter-actions {
-            display: flex;
-            gap: 10px;
-            align-items: end;
-            justify-content: center;
+        .form-group input.error,
+        .form-group select.error {
+            border-color: var(--danger-color);
+            background-color: #fef2f2;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background-color: var(--success-light);
+            color: #065f46;
+        }
+
+        .status-badge.inactive {
+            background-color: var(--danger-light);
+            color: #991b1b;
         }
 
         .btn {
@@ -241,7 +355,8 @@ $empresas = $stmt->fetchAll();
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-dark);
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
@@ -253,510 +368,508 @@ $empresas = $stmt->fetchAll();
             background-color: #545b62;
         }
 
-        .results-info {
+        .form-actions {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .results-count {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            margin-bottom: 20px;
-        }
-
-        .empresa-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .empresa-table th {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .empresa-table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-        }
-
-        .empresa-table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .empresa-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            text-align: center;
-            min-width: 60px;
-            display: inline-block;
-        }
-
-        .status-ativo {
-            background-color: rgba(46, 204, 113, 0.2);
-            color: #27ae60;
-        }
-
-        .status-inativo {
-            background-color: rgba(231, 76, 60, 0.2);
-            color: #c0392b;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-sm {
-            padding: 4px 8px;
-            font-size: 12px;
-            border-radius: 3px;
-        }
-
-        .btn-info {
-            background-color: #17a2b8;
-            color: white;
-        }
-
-        .btn-info:hover {
-            background-color: #138496;
-        }
-
-        .btn-warning {
-            background-color: var(--warning-color);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background-color: #e67e22;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .pagination a,
-        .pagination span {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            color: var(--primary-color);
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .pagination a:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .pagination .current {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .pagination .disabled {
-            color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .no-results i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            opacity: 0.5;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         @media (max-width: 768px) {
-            .filters-form {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .card-body {
+                padding: 20px;
+            }
+
+            .form-row {
                 grid-template-columns: 1fr;
+                gap: 15px;
             }
 
-            .filter-actions {
-                grid-column: 1;
-                justify-content: stretch;
-            }
-
-            .filter-actions .btn {
-                flex: 1;
-            }
-
-            .results-info {
+            .form-actions {
                 flex-direction: column;
-                gap: 10px;
                 align-items: stretch;
             }
 
-            .empresa-table {
-                font-size: 12px;
-            }
-
-            .empresa-table th,
-            .empresa-table td {
-                padding: 8px 4px;
-            }
-
-            .actions {
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .pagination {
-                flex-wrap: wrap;
+            .btn {
+                margin-right: 0;
+                justify-content: center;
             }
         }
 
-        .debug-info {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 12px;
-            color: #856404;
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #0ea5e9;
+            border-radius: var(--radius);
+            padding: 15px;
+            margin-bottom: 25px;
+            color: #0c4a6e;
+        }
+
+        .info-box i {
+            margin-right: 8px;
+            color: #0ea5e9;
+        }
+
+        .footer-custom {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: var(--text-color) !important;
+        }
+
+        .footer-custom-text {
+            margin-top: -10px !important;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .footer-custom a {
+            color: var(--text-color) !important;
+            text-decoration: none;
+        }
+
+        .footer-custom a:hover {
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <div class="container">
-            <h1>Painel Administrativo</h1>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.php" class="logo">
+                🏢 Sistema Administrativo
+            </a>
+            <nav class="nav-links">
+                <a target="_blank" class="btn btn-primary" href="dashboard.php">Dashboard</a>
+                <a target="_blank" class="btn btn-primary" href="cadastro_empresa.php">Nova Empresa</a>
+                <a target="_blank" class="btn btn-primary" href="cadastro_usuarios.php">Cadastro de Usuários</a>
+            </nav>
         </div>
     </header>
 
-    <div class="container">
-        <div class="card">
-            <h2 class="section-title">
-                Pesquisa de Empresas
-                <a href="cadastro_empresa.php" class="btn-novo">+ Nova Empresa</a>
-            </h2>
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-edit"></i> Editar Empresa</h2>
+        </div>
 
-            <!-- Debug Info (remover em produção) -->
-            <?php if (!empty($_GET)): ?>
-                <div class="debug-info">
-                    <strong>Debug - Parâmetros de pesquisa:</strong><br>
-                    <?php foreach ($_GET as $key => $value): ?>
-                        <?= htmlspecialchars($key) ?>: <?= htmlspecialchars($value) ?><br>
-                    <?php endforeach; ?>
-                    <strong>Query SQL:</strong> <?= htmlspecialchars($sql) ?><br>
-                    <strong>Where Clause:</strong> <?= htmlspecialchars($where_clause) ?>
+        <div class="card-body">
+            <?php if (isset($sucesso)): ?>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <?= htmlspecialchars($sucesso) ?>
                 </div>
             <?php endif; ?>
 
-            <!-- Formulário de Filtros -->
-            <form method="GET" class="filters-form">
-                <div class="form-group">
-                    <label for="nome">Razão Social / Nome Fantasia:</label>
-                    <input type="text" id="nome" name="nome" value="<?= htmlspecialchars($filtro_nome) ?>" placeholder="Digite o nome da empresa">
+            <?php if (isset($erro)): ?>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= htmlspecialchars($erro) ?>
                 </div>
+            <?php endif; ?>
 
-                <div class="form-group">
-                    <label for="cnpj">CNPJ:</label>
-                    <input type="text" id="cnpj" name="cnpj" value="<?= htmlspecialchars($filtro_cnpj) ?>" placeholder="Digite o CNPJ" maxlength="18">
+            <?php if (isset($errors) && !empty($errors)): ?>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Corrija os seguintes erros:</strong>
+                        <ul style="margin: 10px 0 0 20px;">
+                            <?php foreach ($errors as $error): ?>
+                                <li><?= htmlspecialchars($error) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                 </div>
+            <?php endif; ?>
 
-                <div class="form-group">
-                    <label for="cidade">Cidade:</label>
-                    <input type="text" id="cidade" name="cidade" value="<?= htmlspecialchars($filtro_cidade) ?>" placeholder="Digite a cidade">
-                </div>
-
-                <div class="form-group">
-                    <label for="estado">Estado:</label>
-                    <select id="estado" name="estado">
-                        <option value="">Todos os estados</option>
-                        <option value="AC" <?= $filtro_estado == 'AC' ? 'selected' : '' ?>>AC</option>
-                        <option value="AL" <?= $filtro_estado == 'AL' ? 'selected' : '' ?>>AL</option>
-                        <option value="AP" <?= $filtro_estado == 'AP' ? 'selected' : '' ?>>AP</option>
-                        <option value="AM" <?= $filtro_estado == 'AM' ? 'selected' : '' ?>>AM</option>
-                        <option value="BA" <?= $filtro_estado == 'BA' ? 'selected' : '' ?>>BA</option>
-                        <option value="CE" <?= $filtro_estado == 'CE' ? 'selected' : '' ?>>CE</option>
-                        <option value="DF" <?= $filtro_estado == 'DF' ? 'selected' : '' ?>>DF</option>
-                        <option value="ES" <?= $filtro_estado == 'ES' ? 'selected' : '' ?>>ES</option>
-                        <option value="GO" <?= $filtro_estado == 'GO' ? 'selected' : '' ?>>GO</option>
-                        <option value="MA" <?= $filtro_estado == 'MA' ? 'selected' : '' ?>>MA</option>
-                        <option value="MT" <?= $filtro_estado == 'MT' ? 'selected' : '' ?>>MT</option>
-                        <option value="MS" <?= $filtro_estado == 'MS' ? 'selected' : '' ?>>MS</option>
-                        <option value="MG" <?= $filtro_estado == 'MG' ? 'selected' : '' ?>>MG</option>
-                        <option value="PA" <?= $filtro_estado == 'PA' ? 'selected' : '' ?>>PA</option>
-                        <option value="PB" <?= $filtro_estado == 'PB' ? 'selected' : '' ?>>PB</option>
-                        <option value="PR" <?= $filtro_estado == 'PR' ? 'selected' : '' ?>>PR</option>
-                        <option value="PE" <?= $filtro_estado == 'PE' ? 'selected' : '' ?>>PE</option>
-                        <option value="PI" <?= $filtro_estado == 'PI' ? 'selected' : '' ?>>PI</option>
-                        <option value="RJ" <?= $filtro_estado == 'RJ' ? 'selected' : '' ?>>RJ</option>
-                        <option value="RN" <?= $filtro_estado == 'RN' ? 'selected' : '' ?>>RN</option>
-                        <option value="RS" <?= $filtro_estado == 'RS' ? 'selected' : '' ?>>RS</option>
-                        <option value="RO" <?= $filtro_estado == 'RO' ? 'selected' : '' ?>>RO</option>
-                        <option value="RR" <?= $filtro_estado == 'RR' ? 'selected' : '' ?>>RR</option>
-                        <option value="SC" <?= $filtro_estado == 'SC' ? 'selected' : '' ?>>SC</option>
-                        <option value="SP" <?= $filtro_estado == 'SP' ? 'selected' : '' ?>>SP</option>
-                        <option value="SE" <?= $filtro_estado == 'SE' ? 'selected' : '' ?>>SE</option>
-                        <option value="TO" <?= $filtro_estado == 'TO' ? 'selected' : '' ?>>TO</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="ativo">Status:</label>
-                    <select id="ativo" name="ativo">
-                        <option value="">Todos</option>
-                        <option value="S" <?= $filtro_ativo == 'S' ? 'selected' : '' ?>>Ativo</option>
-                        <option value="N" <?= $filtro_ativo == 'N' ? 'selected' : '' ?>>Inativo</option>
-                    </select>
-                </div>
-
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">🔍 Pesquisar</button>
-                    <a href="pesquisa_empresas.php" class="btn btn-secondary">🧹 Limpar</a>
-                </div>
-            </form>
-
-            <!-- Informações dos Resultados -->
-            <div class="results-info">
-                <div class="results-count">
-                    Mostrando <?= count($empresas) ?> de <?= $total_registros ?> empresa(s) encontrada(s)
-                </div>
-                <div class="results-count">
-                    Página <?= $pagina_atual ?> de <?= $total_paginas ?>
-                </div>
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <strong>Empresa criada em:</strong>
+                <?= date('d/m/Y H:i', strtotime($empresa['criado_em'])) ?>
+                <?php if ($empresa['atualizado_em']): ?>
+                    | <strong>Última atualização:</strong>
+                    <?= date('d/m/Y H:i', strtotime($empresa['atualizado_em'])) ?>
+                <?php endif; ?>
             </div>
 
-            <!-- Tabela de Resultados -->
-            <?php if (count($empresas) > 0): ?>
-                <div class="table-container">
-                    <table class="empresa-table">
-                        <thead>
-                            <tr>
-                                <th>Razão Social</th>
-                                <th>Nome Fantasia</th>
-                                <th>CNPJ</th>
-                                <th>Cidade/UF</th>
-                                <th>Telefone</th>
-                                <th>Status</th>
-                                <th>Cadastro</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($empresas as $empresa): ?>
-                                <tr>
-                                    <td>
-                                        <strong><?= htmlspecialchars($empresa['razao_social']) ?></strong>
-                                    </td>
-                                    <td><?= htmlspecialchars($empresa['fantasia'] ?: '-') ?></td>
-                                    <td>
-                                        <?php
-                                        $cnpj = $empresa['cpf_cnpj'];
-                                        if (strlen($cnpj) == 14) {
-                                            echo preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj);
-                                        } else {
-                                            echo htmlspecialchars($cnpj);
-                                        }
-                                        ?>
-                                    </td>
-                                    <td><?= htmlspecialchars($empresa['cidade'] . '/' . $empresa['estado']) ?></td>
-                                    <td><?= htmlspecialchars($empresa['telefone'] ?: '-') ?></td>
-                                    <td>
-                                        <span class="status-badge <?= $empresa['ativo'] == 'S' ? 'status-ativo' : 'status-inativo' ?>">
-                                            <?= $empresa['ativo'] == 'S' ? 'Ativo' : 'Inativo' ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <?php
-                                        $data_cadastro = new DateTime($empresa['criado_em']);
-                                        echo $data_cadastro->format('d/m/Y');
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <div class="actions">
-                                            <a href="visualizar_empresa.php?id=<?= urlencode($empresa['id']) ?>" 
-                                               class="btn btn-info btn-sm" 
-                                               title="Visualizar"
-                                               target="_blank">
-                                                👁️
-                                            </a>
-                                            <a href="editar_empresa.php?id=<?= urlencode($empresa['id']) ?>" 
-                                               class="btn btn-warning btn-sm" 
-                                               title="Editar"
-                                               onclick="return confirmarEdicao(<?= $empresa['id'] ?>, '<?= htmlspecialchars(addslashes($empresa['razao_social'])) ?>')">
-                                                ✏️
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Paginação -->
-                <?php if ($total_paginas > 1): ?>
-                    <div class="pagination">
-                        <?php
-                        $query_params = $_GET;
-
-                        // Botão Anterior
-                        if ($pagina_atual > 1):
-                            $query_params['pagina'] = $pagina_atual - 1;
-                            $url_anterior = '?' . http_build_query($query_params);
-                        ?>
-                            <a href="<?= $url_anterior ?>">« Anterior</a>
-                        <?php else: ?>
-                            <span class="disabled">« Anterior</span>
-                        <?php endif; ?>
-
-                        <?php
-                        // Páginas numeradas
-                        $inicio = max(1, $pagina_atual - 2);
-                        $fim = min($total_paginas, $pagina_atual + 2);
-
-                        for ($i = $inicio; $i <= $fim; $i++):
-                            $query_params['pagina'] = $i;
-                            $url_pagina = '?' . http_build_query($query_params);
-                        ?>
-                            <?php if ($i == $pagina_atual): ?>
-                                <span class="current"><?= $i ?></span>
-                            <?php else: ?>
-                                <a href="<?= $url_pagina ?>"><?= $i ?></a>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-
-                        <?php
-                        // Botão Próximo
-                        if ($pagina_atual < $total_paginas):
-                            $query_params['pagina'] = $pagina_atual + 1;
-                            $url_proximo = '?' . http_build_query($query_params);
-                        ?>
-                            <a href="<?= $url_proximo ?>">Próximo »</a>
-                        <?php else: ?>
-                            <span class="disabled">Próximo »</span>
-                        <?php endif; ?>
+            <form method="POST" id="empresaForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="razao_social" class="required">Razão Social</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="razao_social" name="razao_social"
+                                value="<?= htmlspecialchars($empresa['razao_social']) ?>"
+                                required maxlength="255" autocomplete="organization">
+                            <i class="fas fa-building input-icon"></i>
+                        </div>
                     </div>
-                <?php endif; ?>
 
-            <?php else: ?>
-                <div class="no-results">
-                    <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;">🔍</div>
-                    <h3>Nenhuma empresa encontrada</h3>
-                    <p>Tente ajustar os filtros de pesquisa ou <a href="cadastro_empresa.php">cadastre uma nova empresa</a>.</p>
+                    <div class="form-group">
+                        <label for="fantasia">Nome Fantasia</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="fantasia" name="fantasia"
+                                value="<?= htmlspecialchars($empresa['fantasia'] ?: '') ?>"
+                                maxlength="255">
+                            <i class="fas fa-store input-icon"></i>
+                        </div>
+                    </div>
                 </div>
-            <?php endif; ?>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cpf_cnpj" class="required">CNPJ</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="cpf_cnpj" name="cpf_cnpj"
+                                value="<?= htmlspecialchars($empresa['cpf_cnpj']) ?>"
+                                required pattern="\d{14}"
+                                placeholder="00.000.000/0000-00">
+                            <i class="fas fa-id-card input-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefone">Telefone</label>
+                        <div class="input-wrapper">
+                            <input type="tel" id="telefone" name="telefone"
+                                value="<?= htmlspecialchars($empresa['telefone'] ?: '') ?>"
+                                placeholder="(00) 00000-0000">
+                            <i class="fas fa-phone input-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="email" name="email"
+                                value="<?= htmlspecialchars($empresa['email'] ?: '') ?>"
+                                autocomplete="email" maxlength="255">
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                        <label for="site">Site</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="site" name="site"
+                                value="<?= htmlspecialchars($empresa['site'] ?: '') ?>">
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label for="logradouro">Logradouro</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="logradouro" name="logradouro"
+                                value="<?= htmlspecialchars($empresa['logradouro'] ?: '') ?>"
+                                maxlength="255">
+                            <i class="fas fa-map-marker-alt input-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cidade" class="required">Cidade</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="cidade" name="cidade"
+                                value="<?= htmlspecialchars($empresa['cidade']) ?>"
+                                required maxlength="100">
+                            <i class="fas fa-city input-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cep">CEP</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="cep" name="cep"
+                                value="<?= htmlspecialchars($empresa['cep'] ?: '') ?>"
+                                pattern="\d{8}" placeholder="00000-000">
+                            <i class="fas fa-mail-bulk input-icon"></i>
+                        </div>
+                        <small style="color: #6b7280; font-size: 0.8rem; margin-top: 5px; display: block;">
+                            <i class="fas fa-info-circle"></i> O endereço será preenchido automaticamente
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="estado" class="required">Estado</label>
+                        <select id="estado" name="estado" required>
+                            <option value="">Selecione o estado...</option>
+                            <?php
+                            $estados = [
+                                'AC' => 'Acre',
+                                'AL' => 'Alagoas',
+                                'AP' => 'Amapá',
+                                'AM' => 'Amazonas',
+                                'BA' => 'Bahia',
+                                'CE' => 'Ceará',
+                                'DF' => 'Distrito Federal',
+                                'ES' => 'Espírito Santo',
+                                'GO' => 'Goiás',
+                                'MA' => 'Maranhão',
+                                'MT' => 'Mato Grosso',
+                                'MS' => 'Mato Grosso do Sul',
+                                'MG' => 'Minas Gerais',
+                                'PA' => 'Pará',
+                                'PB' => 'Paraíba',
+                                'PR' => 'Paraná',
+                                'PE' => 'Pernambuco',
+                                'PI' => 'Piauí',
+                                'RJ' => 'Rio de Janeiro',
+                                'RN' => 'Rio Grande do Norte',
+                                'RS' => 'Rio Grande do Sul',
+                                'RO' => 'Rondônia',
+                                'RR' => 'Roraima',
+                                'SC' => 'Santa Catarina',
+                                'SP' => 'São Paulo',
+                                'SE' => 'Sergipe',
+                                'TO' => 'Tocantins'
+                            ];
+                            foreach ($estados as $sigla => $nome): ?>
+                                <option value="<?= $sigla ?>" <?= $empresa['estado'] == $sigla ? 'selected' : '' ?>>
+                                    <?= $sigla ?> - <?= $nome ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ativo" class="required">Status</label>
+                        <select id="ativo" name="ativo" required>
+                            <option value="S" <?= $empresa['ativo'] == 'S' ? 'selected' : '' ?>>
+                                <i class="fas fa-check-circle"></i> Ativo
+                            </option>
+                            <option value="N" <?= $empresa['ativo'] == 'N' ? 'selected' : '' ?>>
+                                <i class="fas fa-times-circle"></i> Inativo
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div>
+                        <span class="status-badge <?= $empresa['ativo'] == 'S' ? 'active' : 'inactive' ?>">
+                            <i class="fas fa-<?= $empresa['ativo'] == 'S' ? 'check-circle' : 'times-circle' ?>"></i>
+                            Status: <?= $empresa['ativo'] == 'S' ? 'Ativo' : 'Inativo' ?>
+                        </span>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                        <a href="pesquisa_empresas.php" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+            </form>
         </div>
+    </div>
     </div>
 
     <script>
+        // Máscaras para campos
         document.addEventListener('DOMContentLoaded', function() {
-            // Formatação do CNPJ no filtro
-            const cnpjInput = document.getElementById('cnpj');
-            if (cnpjInput) {
-                cnpjInput.addEventListener('input', function() {
-                    let value = this.value.replace(/\D/g, '');
-                    if (value.length <= 11) {
-                        // CPF
-                        value = value.replace(/^(\d{3})(\d)/, '$1.$2');
-                        value = value.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
-                        value = value.replace(/\.(\d{3})(\d)/, '.$1-$2');
+            // Máscara CNPJ
+            const cnpjInput = document.getElementById('cpf_cnpj');
+            cnpjInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                e.target.value = value;
+            });
+
+            // Máscara Telefone
+            const telefoneInput = document.getElementById('telefone');
+            telefoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 10) {
+                    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                } else {
+                    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                }
+                e.target.value = value;
+            });
+
+            // Máscara CEP
+            const cepInput = document.getElementById('cep');
+            cepInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+                e.target.value = value;
+            });
+
+            // Buscar CEP
+            cepInput.addEventListener('blur', function(e) {
+                const cep = e.target.value.replace(/\D/g, '');
+                console.log('CEP digitado:', cep);
+
+                if (cep.length === 8) {
+                    // Mostrar loading
+                    const logradouroInput = document.getElementById('logradouro');
+                    const cidadeInput = document.getElementById('cidade');
+                    const estadoSelect = document.getElementById('estado');
+
+                    console.log('Elementos encontrados:', {
+                        logradouro: !!logradouroInput,
+                        cidade: !!cidadeInput,
+                        estado: !!estadoSelect
+                    });
+
+                    if (logradouroInput) logradouroInput.value = 'Buscando...';
+                    if (cidadeInput) cidadeInput.value = 'Buscando...';
+
+                    console.log('Buscando CEP:', cep);
+
+                    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                        .then(response => {
+                            console.log('Response status:', response.status);
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Dados recebidos:', data);
+
+                            if (!data.erro) {
+                                if (logradouroInput) {
+                                    logradouroInput.value = data.logradouro || '';
+                                    console.log('Logradouro preenchido:', data.logradouro);
+                                }
+                                if (cidadeInput) {
+                                    cidadeInput.value = data.localidade || '';
+                                    console.log('Cidade preenchida:', data.localidade);
+                                }
+                                if (estadoSelect) {
+                                    estadoSelect.value = data.uf || '';
+                                    console.log('Estado preenchido:', data.uf);
+                                }
+
+                                // Destacar campos preenchidos
+                                if (logradouroInput) logradouroInput.style.backgroundColor = '#f0f9ff';
+                                if (cidadeInput) cidadeInput.style.backgroundColor = '#f0f9ff';
+                                if (estadoSelect) estadoSelect.style.backgroundColor = '#f0f9ff';
+
+                                setTimeout(() => {
+                                    if (logradouroInput) logradouroInput.style.backgroundColor = '';
+                                    if (cidadeInput) cidadeInput.style.backgroundColor = '';
+                                    if (estadoSelect) estadoSelect.style.backgroundColor = '';
+                                }, 2000);
+                            } else {
+                                if (logradouroInput) logradouroInput.value = '';
+                                if (cidadeInput) cidadeInput.value = '';
+                                alert('CEP não encontrado!');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao buscar CEP:', error);
+                            if (logradouroInput) logradouroInput.value = '';
+                            if (cidadeInput) cidadeInput.value = '';
+                            alert('Erro ao buscar CEP. Verifique sua conexão com a internet.');
+                        });
+                } else if (cep.length > 0) {
+                    console.log('CEP incompleto:', cep);
+                }
+            });
+
+            // Loading no submit
+            const form = document.getElementById('empresaForm');
+            const loading = document.getElementById('loading');
+
+            form.addEventListener('submit', function() {
+                loading.classList.add('show');
+            });
+
+            // Validação em tempo real
+            const requiredInputs = document.querySelectorAll('input[required], select[required]');
+            requiredInputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        this.classList.add('error');
                     } else {
-                        // CNPJ
-                        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-                        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-                        value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-                        value = value.replace(/(\d{4})(\d)/, '$1-$2');
-                    }
-                    this.value = value;
-                });
-            }
-
-            // Confirmar antes de limpar filtros (apenas se houver filtros aplicados)
-            const btnLimpar = document.querySelector('a[href="pesquisa_empresas.php"]');
-            if (btnLimpar) {
-                btnLimpar.addEventListener('click', function(e) {
-                    const temFiltros = <?= !empty(array_filter([$filtro_nome, $filtro_cnpj, $filtro_cidade, $filtro_estado, $filtro_ativo])) ? 'true' : 'false' ?>;
-
-                    if (temFiltros && !confirm('Deseja realmente limpar todos os filtros?')) {
-                        e.preventDefault();
+                        this.classList.remove('error');
                     }
                 });
-            }
-        });
 
-        // Função para confirmar edição
-        function confirmarEdicao(id, nomeEmpresa) {
-            console.log('Tentando editar empresa ID:', id, 'Nome:', nomeEmpresa);
-            return confirm('Deseja editar a empresa "' + nomeEmpresa + '"?');
-        }
-
-        // Função para destacar termo pesquisado
-        function destacarTermo(texto, termo) {
-            if (!termo) return texto;
-            const regex = new RegExp(`(${termo})`, 'gi');
-            return texto.replace(regex, '<mark style="background-color: yellow; padding: 2px;">$1</mark>');
-        }
-
-        // Aplicar destaque nos resultados se houver termo de pesquisa
-        document.addEventListener('DOMContentLoaded', function() {
-            const termoPesquisa = '<?= htmlspecialchars($filtro_nome) ?>';
-            if (termoPesquisa) {
-                const celulasNome = document.querySelectorAll('.empresa-table tbody td:first-child strong');
-                const celulasFantasia = document.querySelectorAll('.empresa-table tbody td:nth-child(2)');
-
-                celulasNome.forEach(celula => {
-                    celula.innerHTML = destacarTermo(celula.textContent, termoPesquisa);
-                });
-
-                celulasFantasia.forEach(celula => {
-                    if (celula.textContent !== '-') {
-                        celula.innerHTML = destacarTermo(celula.textContent, termoPesquisa);
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('error') && this.value.trim()) {
+                        this.classList.remove('error');
                     }
-                });
-            }
-        });
-
-        // Debug dos links de ação
-        document.addEventListener('DOMContentLoaded', function() {
-            const linksAcao = document.querySelectorAll('.actions a');
-            linksAcao.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    console.log('Link clicado:', this.href);
-                    console.log('Tipo de ação:', this.title);
-                    
-                    // Para debug, comentar a linha abaixo depois dos testes
-                    // e.preventDefault();
                 });
             });
+
+            // Auto-hide success message
+            const successAlert = document.querySelector('.alert-success');
+            if (successAlert) {
+                setTimeout(() => {
+                    successAlert.style.opacity = '0';
+                    setTimeout(() => {
+                        successAlert.remove();
+                    }, 300);
+                }, 5000);
+            }
         });
     </script>
 </body>
+
+<?php
+require_once 'footer.php';
+?>
 
 </html>

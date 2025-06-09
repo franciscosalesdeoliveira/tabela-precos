@@ -20,7 +20,7 @@ $where_conditions = [];
 $params = [];
 
 if (!empty($filtro_nome)) {
-    $where_conditions[] = "(razao_social LIKE :nome OR fantasia LIKE :nome)";
+    $where_conditions[] = "(unaccent(lower(razao_social)) LIKE unaccent(lower(:nome)) OR unaccent(lower(fantasia)) LIKE unaccent(lower(:nome)))";
     $params[':nome'] = "%$filtro_nome%";
 }
 
@@ -31,7 +31,7 @@ if (!empty($filtro_cnpj)) {
 }
 
 if (!empty($filtro_cidade)) {
-    $where_conditions[] = "cidade LIKE :cidade";
+    $where_conditions[] =  "(unaccent(lower(cidade)) LIKE unaccent(lower(:cidade)) OR unaccent(lower(fantasia)) LIKE unaccent(lower(:cidade)))";
     $params[':cidade'] = "%$filtro_cidade%";
 }
 
@@ -103,6 +103,7 @@ $empresas = $stmt->fetchAll();
             --bg-color: #f8f9fa;
             --text-color: #333;
             --border-color: #ddd;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -113,9 +114,9 @@ $empresas = $stmt->fetchAll();
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
         }
 
         .container {
@@ -124,12 +125,52 @@ $empresas = $stmt->fetchAll();
             padding: 20px;
         }
 
-        header {
-            background-color: var(--primary-color);
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-links a {
+            color: var(--dark-color);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: var(--primary-color);
             color: white;
-            padding: 15px 0;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
@@ -230,7 +271,8 @@ $empresas = $stmt->fetchAll();
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-dark);
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
@@ -426,13 +468,40 @@ $empresas = $stmt->fetchAll();
                 flex-wrap: wrap;
             }
         }
+
+        .footer-custom {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: var(--text-color) !important;
+        }
+
+        .footer-custom-text {
+            margin-top: -10px !important;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .footer-custom a {
+            color: var(--text-color) !important;
+            text-decoration: none;
+        }
+
+        .footer-custom a:hover {
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
-    <header>
-        <div class="container">
-            <h1>Painel Administrativo</h1>
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.php" class="logo">
+                🏢 Sistema Administrativo
+            </a>
+            <nav class="nav-links">
+                <a target="_blank" class="btn btn-primary" href="dashboard.php">Dashboard</a>
+                <a target="_blank" class="btn btn-primary" href="cadastro_empresa.php">Nova Empresa</a>
+                <a target="_blank" class="btn btn-primary" href="cadastro_usuarios.php">Cadastro de Usuários</a>
+            </nav>
         </div>
     </header>
 
@@ -440,7 +509,7 @@ $empresas = $stmt->fetchAll();
         <div class="card">
             <h2 class="section-title">
                 Pesquisa de Empresas
-                <a href="cadastro_empresa.php" class="btn-novo">+ Nova Empresa</a>
+
             </h2>
 
             <!-- Formulário de Filtros -->
@@ -694,5 +763,10 @@ $empresas = $stmt->fetchAll();
         });
     </script>
 </body>
+
+<?php
+
+require_once 'footer.php';
+?>
 
 </html>

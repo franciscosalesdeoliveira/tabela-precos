@@ -6,9 +6,7 @@
  */
 
 // Iniciar sessão se ainda não estiver iniciada
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+
 
 // Carregar configurações de arquivo .env se disponível
 if (file_exists(__DIR__ . '/.env.php')) {
